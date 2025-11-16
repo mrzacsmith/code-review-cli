@@ -1,6 +1,6 @@
 {
   "name": "@mrzacsmith/code-review-cli",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "CLI tool for AI-powered code review of git commits using multiple LLM providers",
   "main": "src/index.js",
   "bin": {
