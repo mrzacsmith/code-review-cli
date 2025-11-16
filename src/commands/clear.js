@@ -7,12 +7,14 @@ const {
   success,
   info,
   header,
+  displayCommandHeader,
 } = require('../output');
 
 /**
  * Clear command - remove all code review reports
  */
 async function clearCommand() {
+  displayCommandHeader({ action: 'Clear Reports' });
   const spinner = createSpinner('Loading configuration...');
 
   try {

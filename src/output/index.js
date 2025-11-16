@@ -1,5 +1,69 @@
 const chalk = require('chalk');
 const ora = require('ora');
+const path = require('path');
+const fs = require('fs');
+
+/**
+ * Get package version dynamically
+ */
+function getPackageVersion() {
+  try {
+    const packagePath = path.join(__dirname, '../../package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+    return packageJson.version;
+  } catch (err) {
+    return '0.1.8'; // fallback version
+  }
+}
+
+/**
+ * Display colorful terminal header for command separation
+ */
+function displayCommandHeader(options = {}) {
+  const {
+    command = 'Code Review CLI',
+    version = getPackageVersion(),
+    action = '',
+    project = '',
+    branch = '',
+    timestamp = new Date()
+  } = options;
+
+  // Get current time formatted
+  const timeStr = timestamp.toLocaleTimeString('en-US', { 
+    hour12: false, 
+    hour: '2-digit', 
+    minute: '2-digit', 
+    second: '2-digit' 
+  });
+
+  // Get project name from current directory if not provided
+  const projectName = project || path.basename(process.cwd());
+
+  // Build header content
+  const rocket = chalk.cyan('🚀');
+  const versionText = chalk.cyan.bold(`CRC v${version}`);
+  const separator = chalk.gray('│');
+  const actionText = action ? chalk.yellow.bold(action) : chalk.yellow.bold(command);
+  const timeText = chalk.gray(timeStr);
+  const projectText = chalk.green.bold(projectName);
+  const branchText = branch ? chalk.magenta(`[${branch}]`) : '';
+
+  // Construct header line
+  let headerLine = `${rocket} ${versionText} ${separator} ${actionText} ${separator} ${timeText} ${separator} ${projectText}`;
+  if (branchText) {
+    headerLine += ` ${separator} ${branchText}`;
+  }
+
+  // Create separator line
+  const separatorLine = chalk.blue('━'.repeat(80));
+
+  // Display header
+  console.log(''); // Empty line before header
+  console.log(headerLine);
+  console.log(separatorLine);
+  console.log(''); // Empty line after header
+}
 
 /**
  * Display progress spinner
@@ -104,5 +168,6 @@ module.exports = {
   header,
   displaySummary,
   displayProviderProgress,
+  displayCommandHeader,
 };
 

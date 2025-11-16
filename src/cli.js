@@ -11,6 +11,7 @@ const {
   editPromptCommand,
   resetPromptCommand,
 } = require('./commands/prompt');
+const { showEnhancedHelp } = require('./help');
 
 const program = new Command();
 const packageJson = require('../package.json');
@@ -42,6 +43,7 @@ program
   .name('crc')
   .description('Code Review CLI - AI-powered code review of git commits')
   .version(packageVersion)
+  .helpOption(false) // Disable default help option
   .addHelpText('after', `\n📦 Documentation: ${createClickableLink(getNpmPackageUrl())}\n`);
 
 program
@@ -59,10 +61,17 @@ program
   .description('Check provider status and configuration')
   .argument('[provider]', 'provider to check (e.g., ollama)')
   .action((provider) => {
-    doctorCommand(provider).catch((err) => {
-      console.error('Error:', err.message);
-      process.exit(1);
-    });
+    if (provider === '?' || provider === 'help') {
+      showEnhancedHelp('doctor').catch((err) => {
+        console.error('Error:', err.message);
+        process.exit(1);
+      });
+    } else {
+      doctorCommand(provider).catch((err) => {
+        console.error('Error:', err.message);
+        process.exit(1);
+      });
+    }
   });
 
 program
@@ -89,10 +98,17 @@ program
   .argument('[type]', 'config type: global or project')
   .argument('[action]', 'action: show or edit (default: show)')
   .action((type, action) => {
-    configCommand(type, action).catch((err) => {
-      console.error('Error:', err.message);
-      process.exit(1);
-    });
+    if (type === '?' || type === 'help') {
+      showEnhancedHelp('config').catch((err) => {
+        console.error('Error:', err.message);
+        process.exit(1);
+      });
+    } else {
+      configCommand(type, action).catch((err) => {
+        console.error('Error:', err.message);
+        process.exit(1);
+      });
+    }
   });
 
 // Prompt command
@@ -125,6 +141,27 @@ program
     }
   });
 
+// Enhanced help commands
+program
+  .command('?')
+  .description('Show enhanced help with colors and live status')
+  .action(() => {
+    showEnhancedHelp().catch((err) => {
+      console.error('Error:', err.message);
+      process.exit(1);
+    });
+  });
+
+program
+  .command('help')
+  .description('Show enhanced help with colors and live status')
+  .action(() => {
+    showEnhancedHelp().catch((err) => {
+      console.error('Error:', err.message);
+      process.exit(1);
+    });
+  });
+
 // Default action - only runs when no command is provided
 program
   .allowUnknownOption(false)
@@ -135,7 +172,19 @@ program
   .option('-n <n>', 'Short alias for --commits', parseInt)
   .option('--branch [name]', 'Review branch vs main (current branch if no name provided)')
   .option('--since <branch>', 'Review commits since branching from specified branch')
+  .option('-h, --help', 'Show enhanced help with colors and live status')
   .action((options) => {
+    // Handle help option
+    if (options.help) {
+      showEnhancedHelp().then(() => {
+        process.exit(0);
+      }).catch((err) => {
+        console.error('Error:', err.message);
+        process.exit(1);
+      });
+      return;
+    }
+
     // Check if a command was provided (not just options)
     const args = process.argv.slice(2);
     const hasCommand = args.some((arg) => !arg.startsWith('--') && arg !== 'crc');

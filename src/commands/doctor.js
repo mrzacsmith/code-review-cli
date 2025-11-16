@@ -8,6 +8,7 @@ const {
   info,
   warning,
   header,
+  displayCommandHeader,
 } = require('../output');
 
 /**
@@ -303,6 +304,10 @@ function displayGeneralResults(results) {
  * Doctor command
  */
 async function doctorCommand(provider) {
+  // Display command header
+  const headerAction = provider ? `Doctor Check (${provider})` : 'Doctor Check';
+  displayCommandHeader({ action: headerAction });
+  
   const spinner = createSpinner('Loading configuration...');
 
   try {

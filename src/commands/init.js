@@ -1,8 +1,10 @@
 const fs = require('fs').promises;
 const chalk = require('chalk');
 const { DEFAULT_CONFIG } = require('../config/template');
+const { displayCommandHeader } = require('../output');
 
 async function initCommand() {
+  displayCommandHeader({ action: 'Initialize Project' });
   const configPath = '.code-review.config';
   const reportsDir = '.code-reviews';
 

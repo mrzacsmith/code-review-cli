@@ -2,6 +2,16 @@
 
 CLI tool for AI-powered code review of git commits using multiple LLM providers (Ollama, OpenRouter, OpenAI, Anthropic).
 
+## ✨ Key Features
+
+- 🚀 **Beautiful Terminal Headers** - Clear visual separation with colorful headers showing command context, version, and timing
+- ❓ **Enhanced Help System** - Discoverable help with `crc ?`, context-aware guidance, and live status display
+- 🔄 **Multi-Commit Reviews** - Review last N commits (`crc --commits 3`) or branch comparisons (`crc --branch`)
+- 🤖 **Multiple LLM Providers** - Support for Ollama (local), OpenAI, Anthropic, and OpenRouter
+- ⚡ **Fast & Efficient** - Smart diff analysis focusing only on changed files
+- 📊 **Detailed Reports** - Markdown reports with comprehensive analysis and suggestions
+- 🎯 **Context-Aware** - Understands your project structure and provides relevant feedback
+
 ## Installation
 
 ```bash
@@ -50,6 +60,14 @@ crc --branch feature/auth # Review specific branch vs main
 crc --since main          # Review commits since branching from main
 ```
 
+6. Get help anytime:
+```bash
+crc help                  # Enhanced help with colors and live status
+crc ?                     # Same as help (more discoverable)
+crc doctor ?              # Context-aware help for doctor command
+crc config help           # Context-aware help for config command
+```
+
 ## Commands
 
 ### Review Commands
@@ -75,6 +93,19 @@ crc --since main          # Review commits since branching from main
 - **`crc --deep`** - Deep scan with transitive dependencies
   - Reviews changed files and all transitive dependencies
   - More comprehensive but slower (coming soon)
+
+### Help Commands
+
+- **`crc help`** or **`crc ?`** - Enhanced help with colors and live status
+  - Shows organized command sections with emoji icons
+  - Displays real-time configuration and model availability
+  - Provides contextual tips and guidance
+  - Examples: `crc help`, `crc ?`
+
+- **`crc <command> ?`** or **`crc <command> help`** - Context-aware help
+  - Shows specific help for individual commands
+  - Includes live status and available options
+  - Examples: `crc doctor ?`, `crc config help`
 
 ### Configuration Commands
 

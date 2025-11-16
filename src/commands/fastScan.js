@@ -23,6 +23,7 @@ const {
   info,
   header,
   displaySummary,
+  displayCommandHeader,
 } = require('../output');
 
 /**
@@ -35,6 +36,20 @@ async function fastScanCommand(options = {}) {
   }
   
   const { commitCount, branchName, sinceBranch } = options;
+  
+  // Display command header
+  let headerAction = 'Fast Scan';
+  if (branchName !== undefined) {
+    const targetBranch = branchName || 'current branch';
+    headerAction = `Branch Review (${targetBranch})`;
+  } else if (sinceBranch) {
+    headerAction = `Since Branch (${sinceBranch})`;
+  } else if (commitCount && commitCount > 1) {
+    headerAction = `Multi-Commit Review (${commitCount})`;
+  }
+  
+  displayCommandHeader({ action: headerAction });
+  
   const spinner = createSpinner('Initializing...');
 
   try {
