@@ -62,7 +62,18 @@ async function getChangedFiles() {
 
   try {
     const commit = await getLatestCommit();
-    const diffSummary = await git.diffSummary([`${commit.hash}^`, commit.hash]);
+    
+    // Check if this is the first commit (no parent)
+    const log = await git.log({ maxCount: 2 });
+    const isFirstCommit = log.total === 1;
+    
+    let diffSummary;
+    if (isFirstCommit) {
+      // For first commit, compare against empty tree
+      diffSummary = await git.diffSummary(['--root', commit.hash]);
+    } else {
+      diffSummary = await git.diffSummary([`${commit.hash}^`, commit.hash]);
+    }
 
     const files = diffSummary.files.map((file) => ({
       path: file.file,
