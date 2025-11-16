@@ -6,6 +6,11 @@
   "bin": {
     "crc": "./bin/crc.js"
   },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md"
+  ],
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",

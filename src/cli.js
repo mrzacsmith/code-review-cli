@@ -3,6 +3,7 @@ const { initCommand } = require('./commands/init');
 const { fastScanCommand } = require('./commands/fastScan');
 const { setupGlobalCommand } = require('./commands/setupGlobal');
 const { clearCommand } = require('./commands/clear');
+const { configCommand } = require('./commands/config');
 const {
   showPromptCommand,
   editPromptCommand,
@@ -38,22 +39,17 @@ program
   .description('Remove all code review reports')
   .action(clearCommand);
 
-// Config command (placeholder - will be implemented)
+// Config command
 program
   .command('config')
   .description('Manage configuration (global or project)')
   .argument('[type]', 'config type: global or project')
-  .action((type) => {
-    if (!type) {
-      console.log('Usage: crc config <global|project>');
-      console.log('  crc config global  - Manage global configuration');
-      console.log('  crc config project - Manage project configuration');
+  .argument('[action]', 'action: show or edit (default: show)')
+  .action((type, action) => {
+    configCommand(type, action).catch((err) => {
+      console.error('Error:', err.message);
       process.exit(1);
-    } else {
-      console.log(`Config command for "${type}" - coming soon`);
-      console.log('Use "crc config global" or "crc config project"');
-      process.exit(1);
-    }
+    });
   });
 
 // Prompt command

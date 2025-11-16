@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Tests
+tests/
+*.test.js
+*.spec.js
+coverage/
+.nyc_output/
+
+# Development files
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Project specific (user-generated)
+.code-reviews/
+.code-review.config
+*.log
+
+# Documentation (keep README.md)
+PRD_REVIEW_AND_PLAN.md
+*.md
+!README.md
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build outputs (if any)
+dist/
+build/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+

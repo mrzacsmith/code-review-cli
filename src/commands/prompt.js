@@ -157,5 +157,6 @@ module.exports = {
   showPromptCommand,
   editPromptCommand,
   resetPromptCommand,
+  editFile,
 };
 
