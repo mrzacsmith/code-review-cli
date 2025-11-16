@@ -1,7 +1,7 @@
 const { OllamaProvider } = require('./ollama');
+const { OpenAIProvider } = require('./openai');
 // Future providers will be added here
 // const { OpenRouterProvider } = require('./openrouter');
-// const { OpenAIProvider } = require('./openai');
 // const { AnthropicProvider } = require('./anthropic');
 
 /**
@@ -13,10 +13,10 @@ function createProvider(providerConfig) {
   switch (name) {
     case 'ollama':
       return new OllamaProvider({ name, ...config });
+    case 'openai':
+      return new OpenAIProvider({ name, ...config });
     // case 'openrouter':
     //   return new OpenRouterProvider({ name, ...config });
-    // case 'openai':
-    //   return new OpenAIProvider({ name, ...config });
     // case 'anthropic':
     //   return new AnthropicProvider({ name, ...config });
     default:

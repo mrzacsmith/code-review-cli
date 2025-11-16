@@ -79,11 +79,19 @@ class OllamaProvider extends BaseProvider {
     } catch (error) {
       const processingTime = Date.now() - startTime;
 
+      let errorMessage = this.formatError(error);
+      // Provide more helpful error messages
+      if (error.code === 'ECONNREFUSED' || error.message.includes('ECONNREFUSED')) {
+        errorMessage = 'Cannot connect to Ollama. Make sure Ollama is running (ollama serve)';
+      } else if (error.response?.status === 404) {
+        errorMessage = `Model "${model}" not found. Pull it with: ollama pull ${model}`;
+      }
+
       return {
         model,
         provider: this.name,
         review: null,
-        error: this.formatError(error),
+        error: errorMessage,
         processingTime,
         success: false,
       };

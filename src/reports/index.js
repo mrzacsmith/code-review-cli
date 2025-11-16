@@ -2,11 +2,43 @@ const fs = require('fs').promises;
 const path = require('path');
 
 /**
+ * Format date for filename (local time, MM-DD-YYYY_HH-mm-ss)
+ */
+function formatDateForFilename(date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${month}-${day}-${year}_${hours}-${minutes}-${seconds}`;
+}
+
+/**
+ * Format date for report (local time, HH:mm:ss MM-DD-YYYY TZ)
+ */
+function formatDateForReport(date) {
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  
+  // Get timezone abbreviation
+  const timezone = Intl.DateTimeFormat('en', { timeZoneName: 'short' })
+    .formatToParts(date)
+    .find((part) => part.type === 'timeZoneName')?.value || 'Local';
+  
+  return `${hours}:${minutes}:${seconds} ${month}-${day}-${year} ${timezone}`;
+}
+
+/**
  * Generate report filename
  */
 function generateReportFilename(commit, scanType = 'fast') {
   const now = new Date();
-  const dateStr = now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  const dateStr = formatDateForFilename(now);
   const shortHash = commit.shortHash || commit.hash.substring(0, 7);
   return `${dateStr}_${shortHash}_${scanType}.md`;
 }
@@ -24,7 +56,7 @@ function generateReport(data) {
   } = data;
 
   let report = `# Code Review Report\n\n`;
-  report += `**Date:** ${new Date().toISOString()}\n`;
+  report += `**Date:** ${formatDateForReport(new Date())}\n`;
   report += `**Commit:** ${commit.hash}\n`;
   report += `**Short Hash:** ${commit.shortHash}\n`;
   report += `**Message:** ${commit.message}\n`;

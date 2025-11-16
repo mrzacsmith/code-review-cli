@@ -7,25 +7,44 @@ const { configSchema } = require('./schema');
 /**
  * Resolve environment variable references in config
  * Supports format: env:VARIABLE_NAME
+ * Only resolves for enabled providers (skips disabled ones)
  */
-function resolveEnvVars(obj) {
+function resolveEnvVars(obj, skipDisabled = false) {
   if (typeof obj === 'string' && obj.startsWith('env:')) {
     const envVar = obj.substring(4);
     const value = process.env[envVar];
     if (!value) {
+      // If we're skipping disabled providers, return the env: reference as-is
+      if (skipDisabled) {
+        return obj;
+      }
       throw new Error(`Environment variable ${envVar} is not set`);
     }
     return value;
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(resolveEnvVars);
+    return obj.map((item) => resolveEnvVars(item, skipDisabled));
   }
 
   if (obj && typeof obj === 'object') {
     const resolved = {};
     for (const [key, value] of Object.entries(obj)) {
-      resolved[key] = resolveEnvVars(value);
+      // For providers, check if enabled before resolving env vars
+      if (key === 'providers' && typeof value === 'object') {
+        resolved[key] = {};
+        for (const [providerName, providerConfig] of Object.entries(value)) {
+          // Only resolve env vars if provider is enabled
+          if (providerConfig && providerConfig.enabled) {
+            resolved[key][providerName] = resolveEnvVars(providerConfig, false);
+          } else {
+            // Skip disabled providers - don't resolve their env vars
+            resolved[key][providerName] = providerConfig;
+          }
+        }
+      } else {
+        resolved[key] = resolveEnvVars(value, skipDisabled);
+      }
     }
     return resolved;
   }
@@ -61,6 +80,7 @@ async function loadGlobalConfig() {
 
 /**
  * Deep merge two objects (project config overrides global)
+ * Special handling: if project has env: reference but global has actual key, use global's key
  */
 function mergeConfigs(global, project) {
   if (!global) return project;
@@ -70,14 +90,24 @@ function mergeConfigs(global, project) {
 
   // Merge providers
   if (project.providers) {
-    merged.providers = { ...global.providers, ...project.providers };
+    merged.providers = { ...global.providers };
     // For each provider, merge settings (project overrides global)
     for (const [name, providerConfig] of Object.entries(project.providers)) {
-      if (merged.providers[name]) {
-        merged.providers[name] = { ...merged.providers[name], ...providerConfig };
-      } else {
-        merged.providers[name] = providerConfig;
+      const globalProvider = global.providers?.[name] || {};
+      const mergedProvider = { ...globalProvider, ...providerConfig };
+      
+      // Special case: if project has env: reference but global has actual api_key, use global's key
+      // This allows project configs to use env: references while global config provides the actual key
+      if (
+        providerConfig.api_key &&
+        providerConfig.api_key.startsWith('env:') &&
+        globalProvider.api_key &&
+        !globalProvider.api_key.startsWith('env:')
+      ) {
+        mergedProvider.api_key = globalProvider.api_key;
       }
+      
+      merged.providers[name] = mergedProvider;
     }
   }
 
