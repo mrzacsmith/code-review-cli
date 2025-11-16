@@ -53,6 +53,8 @@ function generateReport(data) {
     filesChanged,
     providers,
     results,
+    commits, // Individual commits for multi-commit reviews
+    commitCount, // Number of commits reviewed
   } = data;
 
   // Calculate total models from providers
@@ -71,11 +73,28 @@ function generateReport(data) {
 
   let report = `# Code Review Report\n\n`;
   report += `**Date:** ${formatDateForReport(new Date())}\n`;
-  report += `**Commit:** ${commit.hash}\n`;
-  report += `**Short Hash:** ${commit.shortHash}\n`;
-  report += `**Message:** ${commit.message}\n`;
-  report += `**Author:** ${commit.author}\n`;
-  report += `**Scan Type:** ${scanType}\n`;
+  
+  // Handle multi-commit vs single commit headers
+  if (commitCount && commitCount > 1 && commits) {
+    // Multi-commit header
+    report += `**Commits Reviewed:** ${commitCount} (${commit.shortHash})\n`;
+    report += `**Scan Type:** ${scanType}\n`;
+    report += `**Author:** ${commit.author}\n\n`;
+    
+    // List individual commits
+    report += `### Commits Included\n\n`;
+    for (const individualCommit of commits) {
+      report += `- **${individualCommit.shortHash}:** ${individualCommit.message}\n`;
+    }
+    report += `\n`;
+  } else {
+    // Single commit header (existing format)
+    report += `**Commit:** ${commit.hash}\n`;
+    report += `**Short Hash:** ${commit.shortHash}\n`;
+    report += `**Message:** ${commit.message}\n`;
+    report += `**Author:** ${commit.author}\n`;
+    report += `**Scan Type:** ${scanType}\n`;
+  }
   
   if (localModels > 0 && apiModels > 0) {
     report += `**Local LLMs:** ${localModels}\n`;
@@ -126,7 +145,11 @@ function generateReport(data) {
   );
 
   if (successfulReviews.length > 0) {
-    report += `Successfully reviewed with ${successfulReviews.length} model(s).\n\n`;
+    if (commitCount && commitCount > 1) {
+      report += `Successfully reviewed ${commitCount} commits with ${successfulReviews.length} model(s).\n\n`;
+    } else {
+      report += `Successfully reviewed with ${successfulReviews.length} model(s).\n\n`;
+    }
   } else {
     report += `⚠️ No successful reviews. All models failed.\n\n`;
   }

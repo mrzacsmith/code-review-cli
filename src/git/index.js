@@ -49,6 +49,66 @@ async function getLatestCommitDiff() {
 }
 
 /**
+ * Get combined diff for the last N commits
+ */
+async function getLastNCommitsDiff(commitCount) {
+  const git = getGit();
+
+  try {
+    // Validate commit count
+    if (!commitCount || commitCount < 1 || commitCount > 5) {
+      throw new Error('Commit count must be between 1 and 5');
+    }
+
+    // Get the last N commits
+    const log = await git.log({ maxCount: commitCount });
+    if (log.total === 0) {
+      throw new Error('No commits found in repository');
+    }
+
+    if (log.total < commitCount) {
+      throw new Error(`Only ${log.total} commit(s) available, requested ${commitCount}`);
+    }
+
+    // Get commit information for all commits
+    const commits = log.all.map(commit => ({
+      hash: commit.hash,
+      shortHash: commit.hash.substring(0, 7),
+      message: commit.message,
+      author: commit.author_name,
+      date: commit.date,
+    }));
+
+    // Get combined diff from oldest to newest (HEAD~N..HEAD)
+    const diff = await git.diff([`HEAD~${commitCount}`, 'HEAD']);
+
+    // Create a summary commit object representing the range
+    const latestCommit = commits[0]; // Most recent commit
+    const oldestCommit = commits[commits.length - 1]; // Oldest commit in range
+    
+    const rangeCommit = {
+      hash: `${oldestCommit.shortHash}..${latestCommit.shortHash}`,
+      shortHash: `${oldestCommit.shortHash}..${latestCommit.shortHash}`,
+      message: `Combined changes from ${commitCount} commit(s)`,
+      author: latestCommit.author,
+      date: latestCommit.date,
+    };
+
+    return {
+      commit: rangeCommit,
+      commits, // Individual commit details
+      diff,
+      commitCount,
+    };
+  } catch (err) {
+    if (err.message.includes('not a git repository')) {
+      throw new Error('Not a git repository. Please run this command in a git repository.');
+    }
+    throw err;
+  }
+}
+
+/**
  * Get list of changed files in the latest commit
  */
 async function getChangedFiles() {
@@ -91,6 +151,74 @@ async function getChangedFiles() {
 }
 
 /**
+ * Get list of changed files for the last N commits (combined)
+ */
+async function getLastNChangedFiles(commitCount) {
+  const git = getGit();
+
+  try {
+    // Validate commit count
+    if (!commitCount || commitCount < 1 || commitCount > 5) {
+      throw new Error('Commit count must be between 1 and 5');
+    }
+
+    // Get the last N commits for commit info
+    const log = await git.log({ maxCount: commitCount });
+    if (log.total === 0) {
+      throw new Error('No commits found in repository');
+    }
+
+    if (log.total < commitCount) {
+      throw new Error(`Only ${log.total} commit(s) available, requested ${commitCount}`);
+    }
+
+    // Get combined diff summary for the range
+    const diffSummary = await git.diffSummary([`HEAD~${commitCount}`, 'HEAD']);
+
+    const files = diffSummary.files.map((file) => ({
+      path: file.file,
+      insertions: file.insertions,
+      deletions: file.deletions,
+      changes: file.insertions + file.deletions,
+    }));
+
+    // Create commit info for the range
+    const commits = log.all.map(commit => ({
+      hash: commit.hash,
+      shortHash: commit.hash.substring(0, 7),
+      message: commit.message,
+      author: commit.author_name,
+      date: commit.date,
+    }));
+
+    const latestCommit = commits[0];
+    const oldestCommit = commits[commits.length - 1];
+    
+    const rangeCommit = {
+      hash: `${oldestCommit.shortHash}..${latestCommit.shortHash}`,
+      shortHash: `${oldestCommit.shortHash}..${latestCommit.shortHash}`,
+      message: `Combined changes from ${commitCount} commit(s)`,
+      author: latestCommit.author,
+      date: latestCommit.date,
+    };
+
+    return {
+      commit: rangeCommit,
+      commits,
+      files,
+      totalInsertions: diffSummary.insertions,
+      totalDeletions: diffSummary.deletions,
+      commitCount,
+    };
+  } catch (err) {
+    if (err.message.includes('not a git repository')) {
+      throw new Error('Not a git repository. Please run this command in a git repository.');
+    }
+    throw err;
+  }
+}
+
+/**
  * Check if there are uncommitted changes
  */
 async function hasUncommittedChanges() {
@@ -115,7 +243,9 @@ module.exports = {
   getGit,
   getLatestCommit,
   getLatestCommitDiff,
+  getLastNCommitsDiff,
   getChangedFiles,
+  getLastNChangedFiles,
   hasUncommittedChanges,
 };
 

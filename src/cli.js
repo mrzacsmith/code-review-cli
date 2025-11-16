@@ -131,17 +131,31 @@ program
   .option('--fast', 'Fast scan (default)')
   .option('--deep', 'Deep scan with transitive dependencies')
   .option('--clean', 'Clean report directory')
+  .option('--commits <n>', 'Review last N commits (1-5)', parseInt)
+  .option('-n <n>', 'Short alias for --commits', parseInt)
   .action((options) => {
     // Check if a command was provided (not just options)
     const args = process.argv.slice(2);
     const hasCommand = args.some((arg) => !arg.startsWith('--') && arg !== 'crc');
     
     // If a command was provided but not recognized, show error
-    if (hasCommand && !options.clean && !options.deep && !options.fast) {
+    if (hasCommand && !options.clean && !options.deep && !options.fast && !options.commits && !options.n) {
       const command = args.find((arg) => !arg.startsWith('--'));
       if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear', 'ignore', 'doctor'].includes(command)) {
         console.error(`\n✗ Unknown command: ${command}`);
         console.error(`\nRun 'crc --help' to see available commands.\n`);
+        process.exit(1);
+      }
+    }
+    
+    // Handle commit count options (-n takes precedence over --commits)
+    const commitCount = options.n || options.commits;
+    
+    // Validate commit count if provided
+    if (commitCount !== undefined) {
+      if (!Number.isInteger(commitCount) || commitCount < 1 || commitCount > 5) {
+        console.error('\n✗ Commit count must be an integer between 1 and 5');
+        console.error('Examples: crc --commits 3, crc -n 2\n');
         process.exit(1);
       }
     }
@@ -152,8 +166,8 @@ program
     } else if (options.deep) {
       console.log('Deep scan - coming soon');
     } else {
-      // Default to fast scan
-      fastScanCommand().catch((err) => {
+      // Default to fast scan (with optional commit count)
+      fastScanCommand(commitCount).catch((err) => {
         console.error('Error:', err.message);
         process.exit(1);
       });

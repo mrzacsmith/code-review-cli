@@ -1,4 +1,4 @@
-const { getChangedFiles, getLatestCommitDiff, hasUncommittedChanges } = require('../git');
+const { getChangedFiles, getLatestCommitDiff, getLastNChangedFiles, getLastNCommitsDiff, hasUncommittedChanges } = require('../git');
 const { loadRulesFromConfig } = require('../rules');
 const { loadFiles } = require('../files');
 const { getDependencies } = require('../dependencies');
@@ -16,12 +16,21 @@ const {
 } = require('../output');
 
 /**
- * Fast scan command - review latest commit
+ * Fast scan command - review latest commit or last N commits
  */
-async function fastScanCommand() {
+async function fastScanCommand(commitCount) {
   const spinner = createSpinner('Initializing...');
 
   try {
+    // Validate commit count if provided
+    if (commitCount !== undefined) {
+      if (!Number.isInteger(commitCount) || commitCount < 1 || commitCount > 5) {
+        spinner.stop();
+        error('Commit count must be an integer between 1 and 5');
+        process.exit(1);
+      }
+    }
+
     // Check for uncommitted changes
     spinner.text = 'Checking for uncommitted changes...';
     const hasUncommitted = await hasUncommittedChanges();
@@ -41,10 +50,22 @@ async function fastScanCommand() {
       process.exit(1);
     }
 
-    // Get git information
-    spinner.text = 'Analyzing git commit...';
-    const changedFilesData = await getChangedFiles();
-    const diffData = await getLatestCommitDiff();
+    // Get git information - handle single commit vs multi-commit
+    let changedFilesData, diffData, scanType;
+    
+    if (commitCount && commitCount > 1) {
+      // Multi-commit review
+      spinner.text = `Analyzing last ${commitCount} commits...`;
+      changedFilesData = await getLastNChangedFiles(commitCount);
+      diffData = await getLastNCommitsDiff(commitCount);
+      scanType = `fast-${commitCount}`;
+    } else {
+      // Single commit review (default)
+      spinner.text = 'Analyzing git commit...';
+      changedFilesData = await getChangedFiles();
+      diffData = await getLatestCommitDiff();
+      scanType = 'fast';
+    }
 
     // Load rules
     spinner.text = 'Loading project rules...';
@@ -101,7 +122,12 @@ async function fastScanCommand() {
     // Run reviews in parallel
     spinner.stop();
     header('Running Code Reviews');
-    info(`Reviewing with ${totalModels} LLM model(s)...\n`);
+    
+    if (commitCount && commitCount > 1) {
+      info(`Reviewing last ${commitCount} commits with ${totalModels} LLM model(s)...\n`);
+    } else {
+      info(`Reviewing with ${totalModels} LLM model(s)...\n`);
+    }
 
     const reviewSpinner = createSpinner('Sending requests to models...');
     const results = await Promise.all(
@@ -111,14 +137,22 @@ async function fastScanCommand() {
 
     // Generate report
     const reportSpinner = createSpinner('Generating report...');
+    const reportData = {
+      commit: changedFilesData.commit,
+      scanType,
+      filesChanged: changedFilesData.files,
+      providers: enabledProviders,
+      results,
+    };
+    
+    // Add multi-commit specific data if applicable
+    if (commitCount && commitCount > 1) {
+      reportData.commits = changedFilesData.commits;
+      reportData.commitCount = commitCount;
+    }
+    
     const report = await generateAndSaveReport(
-      {
-        commit: changedFilesData.commit,
-        scanType: 'fast',
-        filesChanged: changedFilesData.files,
-        providers: enabledProviders,
-        results,
-      },
+      reportData,
       config.output?.reports_dir || '.code-reviews'
     );
     reportSpinner.stop();
