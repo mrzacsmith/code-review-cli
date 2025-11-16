@@ -1,5 +1,5 @@
 {
-  "name": "code-review-cli",
+  "name": "@mrzacsmith/code-review-cli",
   "version": "0.1.0",
   "description": "CLI tool for AI-powered code review of git commits using multiple LLM providers",
   "main": "src/index.js",
@@ -9,7 +9,9 @@
   "files": [
     "bin/",
     "src/",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "CONTRIBUTING.md"
   ],
   "scripts": {
     "test": "jest",
@@ -27,13 +29,13 @@
     "git",
     "code-analysis"
   ],
-  "author": "",
+  "author": "mrzacsmith",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_USERNAME/code-review-cli.git"
+    "url": "https://github.com/mrzacsmith/code-review-cli.git"
   },
-  "homepage": "https://www.npmjs.com/package/code-review-cli",
+  "homepage": "https://www.npmjs.com/package/@mrzacsmith/code-review-cli",
   "engines": {
     "node": ">=18.0.0"
   },

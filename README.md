@@ -5,7 +5,7 @@ CLI tool for AI-powered code review of git commits using multiple LLM providers 
 ## Installation
 
 ```bash
-npm install -g code-review-cli
+npm install -g @mrzacsmith/code-review-cli
 ```
 
 ## Quick Start

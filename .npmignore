@@ -26,10 +26,12 @@ jest.config.js
 .code-review.config
 *.log
 
-# Documentation (keep README.md)
+# Documentation (keep README.md, LICENSE, CONTRIBUTING.md)
 PRD_REVIEW_AND_PLAN.md
 *.md
 !README.md
+!LICENSE
+!CONTRIBUTING.md
 
 # Environment
 .env
