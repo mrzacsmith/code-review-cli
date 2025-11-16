@@ -8,6 +8,14 @@ CLI tool for AI-powered code review of git commits using multiple LLM providers 
 npm install -g @mrzacsmith/code-review-cli
 ```
 
+### Update
+
+To update to the latest version:
+
+```bash
+npm update -g @mrzacsmith/code-review-cli
+```
+
 ## Quick Start
 
 1. Initialize the project:
@@ -228,6 +236,22 @@ Each report includes:
 - Node.js 18+
 - Git repository
 - At least one enabled LLM provider
+
+## Coming Soon
+
+The following features are planned for future releases:
+
+- **`crc --deep`** - Deep scan with transitive dependencies
+  - Reviews changed files and all transitive dependencies
+  - More comprehensive analysis but slower execution
+
+- **`crc summarize`** - Generate codebase summary
+  - Creates a summary of the entire codebase for context
+  - Useful for providing background information to LLM models
+
+- **`crc --clean`** - Clean report directory
+  - Advanced report management with filtering options
+  - Selective cleanup based on date, commit, or other criteria
 
 ## License
 
