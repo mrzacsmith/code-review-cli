@@ -354,9 +354,9 @@ async function checkAnthropic(config, testConnection = false) {
 }
 
 /**
- * Check OpenRouter status
+ * Check OpenRouter status with enhanced connectivity and model validation
  */
-async function checkOpenRouter(config) {
+async function checkOpenRouter(config, testConnection = false) {
   const openrouterConfig = config.providers?.openrouter;
   if (!openrouterConfig || !openrouterConfig.enabled) {
     return {
@@ -366,26 +366,143 @@ async function checkOpenRouter(config) {
     };
   }
 
-  const apiKey = openrouterConfig.api_key;
-  if (!apiKey || apiKey.startsWith('env:')) {
-    const envVar = apiKey?.replace('env:', '') || 'OPENROUTER_API_KEY';
-    const hasKey = !!process.env[envVar];
-    return {
-      provider: 'OpenRouter',
-      status: hasKey ? 'configured' : 'missing_key',
-      message: hasKey
-        ? `API key found in ${envVar}`
-        : `API key not found. Set ${envVar} environment variable`,
-      configuredModels: openrouterConfig.models || [],
-    };
+  // Resolve API key
+  let resolvedApiKey = openrouterConfig.api_key;
+  if (!resolvedApiKey || resolvedApiKey.startsWith('env:')) {
+    const envVar = resolvedApiKey?.replace('env:', '') || 'OPENROUTER_API_KEY';
+    resolvedApiKey = process.env[envVar];
+    
+    if (!resolvedApiKey) {
+      return {
+        provider: 'OpenRouter',
+        status: 'missing_key',
+        message: `API key not found. Set ${envVar} environment variable`,
+        configuredModels: openrouterConfig.models || [],
+      };
+    }
   }
 
-  return {
+  const result = {
     provider: 'OpenRouter',
     status: 'configured',
     message: 'API key is set',
     configuredModels: openrouterConfig.models || [],
   };
+
+  // If not testing connection, return basic config check
+  if (!testConnection) {
+    return result;
+  }
+
+  // Enhanced connection and model validation
+  try {
+    const axios = require('axios');
+    
+    // Test 1: Connection test - get available models
+    const modelsResponse = await axios.get('https://openrouter.ai/api/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${resolvedApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 10000
+    });
+
+    const availableModels = modelsResponse.data.data.map(model => model.id);
+    
+    result.status = 'connected';
+    result.message = 'Successfully connected to OpenRouter API';
+    result.availableModels = availableModels;
+
+    // Test 2: Model validation
+    const configuredModels = openrouterConfig.models || [];
+    const validModels = [];
+    const invalidModels = [];
+
+    for (const model of configuredModels) {
+      if (availableModels.includes(model)) {
+        validModels.push(model);
+      } else {
+        invalidModels.push(model);
+      }
+    }
+
+    result.validModels = validModels;
+    result.invalidModels = invalidModels;
+
+    // Test 3: Small completion test with first valid model or a cheap fallback
+    const testModel = validModels.length > 0 ? validModels[0] : 'openai/gpt-4o-mini';
+    
+    try {
+      await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+        model: testModel,
+        messages: [{ role: 'user', content: 'test' }],
+        max_tokens: 5
+      }, {
+        headers: {
+          'Authorization': `Bearer ${resolvedApiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://github.com/your-repo/code-review-cli', // Required by OpenRouter
+          'X-Title': 'Code Review CLI' // Optional but recommended
+        },
+        timeout: 15000 // OpenRouter can be slower
+      });
+      
+      result.completionTest = 'passed';
+      result.testedModel = testModel;
+    } catch (completionError) {
+      result.completionTest = 'failed';
+      result.completionError = completionError.response?.data?.error?.message || completionError.message;
+      result.testedModel = testModel;
+    }
+
+    return result;
+
+  } catch (error) {
+    // Categorize the error
+    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      return {
+        ...result,
+        status: 'connection_failed',
+        message: 'Cannot connect to OpenRouter API. Check your internet connection.',
+        error: error.message,
+      };
+    } else if (error.response?.status === 401) {
+      return {
+        ...result,
+        status: 'auth_failed',
+        message: 'Invalid API key. Check your OpenRouter API key.',
+        error: error.response?.data?.error?.message || error.message,
+      };
+    } else if (error.response?.status === 429) {
+      return {
+        ...result,
+        status: 'rate_limited',
+        message: 'Rate limited by OpenRouter API. Try again later.',
+        error: error.response?.data?.error?.message || error.message,
+      };
+    } else if (error.response?.status === 402) {
+      return {
+        ...result,
+        status: 'insufficient_credits',
+        message: 'Insufficient credits on OpenRouter account.',
+        error: error.response?.data?.error?.message || error.message,
+      };
+    } else if (error.response?.status === 400) {
+      return {
+        ...result,
+        status: 'api_error',
+        message: 'Bad request to OpenRouter API. Check your configuration.',
+        error: error.response?.data?.error?.message || error.message,
+      };
+    } else {
+      return {
+        ...result,
+        status: 'api_error',
+        message: 'OpenRouter API error occurred.',
+        error: error.response?.data?.error?.message || error.message,
+      };
+    }
+  }
 }
 
 /**
@@ -522,7 +639,7 @@ async function doctorCommand(provider) {
         checkOllama(config),
         checkOpenAI(config, false), // Basic check for general overview
         checkAnthropic(config, false), // Basic check for general overview
-        checkOpenRouter(config),
+        checkOpenRouter(config, false), // Basic check for general overview
       ]);
       displayGeneralResults(results);
     }
