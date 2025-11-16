@@ -1,4 +1,14 @@
-const { getChangedFiles, getLatestCommitDiff, getLastNChangedFiles, getLastNCommitsDiff, hasUncommittedChanges } = require('../git');
+const { 
+  getChangedFiles, 
+  getLatestCommitDiff, 
+  getLastNChangedFiles, 
+  getLastNCommitsDiff, 
+  getBranchChangedFiles,
+  getBranchDiff,
+  getChangedFilesSince,
+  getCommitsSince,
+  hasUncommittedChanges 
+} = require('../git');
 const { loadRulesFromConfig } = require('../rules');
 const { loadFiles } = require('../files');
 const { getDependencies } = require('../dependencies');
@@ -16,9 +26,15 @@ const {
 } = require('../output');
 
 /**
- * Fast scan command - review latest commit or last N commits
+ * Fast scan command - review latest commit, last N commits, or branch comparison
  */
-async function fastScanCommand(commitCount) {
+async function fastScanCommand(options = {}) {
+  // Handle backward compatibility - if options is a number, treat as commitCount
+  if (typeof options === 'number') {
+    options = { commitCount: options };
+  }
+  
+  const { commitCount, branchName, sinceBranch } = options;
   const spinner = createSpinner('Initializing...');
 
   try {
@@ -50,10 +66,23 @@ async function fastScanCommand(commitCount) {
       process.exit(1);
     }
 
-    // Get git information - handle single commit vs multi-commit
+    // Get git information - handle different review types
     let changedFilesData, diffData, scanType;
     
-    if (commitCount && commitCount > 1) {
+    if (branchName !== undefined) {
+      // Branch comparison review
+      const targetBranch = branchName || 'current branch';
+      spinner.text = `Analyzing branch '${targetBranch}' vs main...`;
+      changedFilesData = await getBranchChangedFiles(branchName);
+      diffData = await getBranchDiff(branchName);
+      scanType = branchName ? `branch-${branchName}` : 'branch-current';
+    } else if (sinceBranch) {
+      // Since branch review
+      spinner.text = `Analyzing commits since '${sinceBranch}'...`;
+      changedFilesData = await getChangedFilesSince(sinceBranch);
+      diffData = await getCommitsSince(sinceBranch);
+      scanType = `since-${sinceBranch}`;
+    } else if (commitCount && commitCount > 1) {
       // Multi-commit review
       spinner.text = `Analyzing last ${commitCount} commits...`;
       changedFilesData = await getLastNChangedFiles(commitCount);
@@ -123,7 +152,12 @@ async function fastScanCommand(commitCount) {
     spinner.stop();
     header('Running Code Reviews');
     
-    if (commitCount && commitCount > 1) {
+    if (branchName !== undefined) {
+      const targetBranch = branchName || 'current branch';
+      info(`Reviewing branch '${targetBranch}' vs main with ${totalModels} LLM model(s)...\n`);
+    } else if (sinceBranch) {
+      info(`Reviewing commits since '${sinceBranch}' with ${totalModels} LLM model(s)...\n`);
+    } else if (commitCount && commitCount > 1) {
       info(`Reviewing last ${commitCount} commits with ${totalModels} LLM model(s)...\n`);
     } else {
       info(`Reviewing with ${totalModels} LLM model(s)...\n`);
@@ -145,10 +179,15 @@ async function fastScanCommand(commitCount) {
       results,
     };
     
-    // Add multi-commit specific data if applicable
+    // Add multi-commit/branch specific data if applicable
     if (commitCount && commitCount > 1) {
       reportData.commits = changedFilesData.commits;
       reportData.commitCount = commitCount;
+    } else if (branchName !== undefined || sinceBranch) {
+      reportData.commits = changedFilesData.commits;
+      reportData.commitCount = changedFilesData.commitCount;
+      reportData.branchName = changedFilesData.branchName;
+      reportData.baseBranch = changedFilesData.baseBranch;
     }
     
     const report = await generateAndSaveReport(

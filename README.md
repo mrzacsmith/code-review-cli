@@ -40,11 +40,14 @@ crc doctor
 crc doctor ollama
 ```
 
-5. Review your latest commit:
+5. Review your code:
 ```bash
-crc                    # Review latest commit
-crc --commits 3        # Review last 3 commits
-crc -n 2               # Review last 2 commits
+crc                       # Review latest commit
+crc --commits 3           # Review last 3 commits
+crc -n 2                  # Review last 2 commits
+crc --branch              # Review current branch vs main
+crc --branch feature/auth # Review specific branch vs main
+crc --since main          # Review commits since branching from main
 ```
 
 ## Commands
@@ -59,6 +62,15 @@ crc -n 2               # Review last 2 commits
   - Reviews combined changes from the last N commits
   - Uses efficient combined diff approach
   - Examples: `crc --commits 3`, `crc -n 2`
+
+- **`crc --branch [name]`** - Review branch vs main
+  - Reviews all commits on branch that aren't in main
+  - Uses current branch if no name provided
+  - Examples: `crc --branch`, `crc --branch feature/auth`
+
+- **`crc --since <branch>`** - Review commits since branching
+  - Reviews all commits since branching from specified branch
+  - Example: `crc --since main`
 
 - **`crc --deep`** - Deep scan with transitive dependencies
   - Reviews changed files and all transitive dependencies
@@ -247,14 +259,6 @@ Each report includes:
 ## Coming Soon
 
 The following features are planned for future releases:
-
-- **`crc --branch`** - Review branch vs main comparison
-  - Reviews all commits on current branch vs main
-  - Useful for PR preparation and feature review
-
-- **`crc --since <branch>`** - Review commits since branching
-  - Reviews commits since branching from specified branch
-  - Flexible branch comparison options
 
 - **`crc --deep`** - Deep scan with transitive dependencies
   - Reviews changed files and all transitive dependencies

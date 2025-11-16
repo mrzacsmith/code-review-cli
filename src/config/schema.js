@@ -12,6 +12,12 @@ const outputSchema = Joi.object({
   format: Joi.string().valid('markdown').default('markdown'),
 });
 
+const multiCommitSchema = Joi.object({
+  max_commits: Joi.number().integer().min(1).max(5).default(5),
+  default_base_branch: Joi.string().default('main'),
+  include_merge_commits: Joi.boolean().default(false),
+});
+
 const configSchema = Joi.object({
   providers: Joi.object({
     ollama: providerSchema.optional(),
@@ -20,6 +26,7 @@ const configSchema = Joi.object({
     anthropic: providerSchema.optional(),
   }).required(),
   output: outputSchema.optional(),
+  multi_commit: multiCommitSchema.optional(),
   rules_file: Joi.string().optional(),
   dependency_depth: Joi.number().integer().min(1).max(5).default(2),
 });

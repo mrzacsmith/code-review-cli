@@ -53,8 +53,10 @@ function generateReport(data) {
     filesChanged,
     providers,
     results,
-    commits, // Individual commits for multi-commit reviews
+    commits, // Individual commits for multi-commit/branch reviews
     commitCount, // Number of commits reviewed
+    branchName, // Branch name for branch comparisons
+    baseBranch, // Base branch for comparisons
   } = data;
 
   // Calculate total models from providers
@@ -74,8 +76,22 @@ function generateReport(data) {
   let report = `# Code Review Report\n\n`;
   report += `**Date:** ${formatDateForReport(new Date())}\n`;
   
-  // Handle multi-commit vs single commit headers
-  if (commitCount && commitCount > 1 && commits) {
+  // Handle different review types
+  if (branchName && baseBranch && commits) {
+    // Branch comparison header
+    report += `**Branch:** ${branchName}\n`;
+    report += `**Base Branch:** ${baseBranch}\n`;
+    report += `**Commits Reviewed:** ${commitCount} (${commit.shortHash})\n`;
+    report += `**Scan Type:** ${scanType}\n`;
+    report += `**Author:** ${commit.author}\n\n`;
+    
+    // List individual commits
+    report += `### Commits Included\n\n`;
+    for (const individualCommit of commits) {
+      report += `- **${individualCommit.shortHash}:** ${individualCommit.message}\n`;
+    }
+    report += `\n`;
+  } else if (commitCount && commitCount > 1 && commits) {
     // Multi-commit header
     report += `**Commits Reviewed:** ${commitCount} (${commit.shortHash})\n`;
     report += `**Scan Type:** ${scanType}\n`;
@@ -145,7 +161,9 @@ function generateReport(data) {
   );
 
   if (successfulReviews.length > 0) {
-    if (commitCount && commitCount > 1) {
+    if (branchName && baseBranch) {
+      report += `Successfully reviewed branch '${branchName}' vs '${baseBranch}' (${commitCount} commits) with ${successfulReviews.length} model(s).\n\n`;
+    } else if (commitCount && commitCount > 1) {
       report += `Successfully reviewed ${commitCount} commits with ${successfulReviews.length} model(s).\n\n`;
     } else {
       report += `Successfully reviewed with ${successfulReviews.length} model(s).\n\n`;

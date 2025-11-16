@@ -133,13 +133,15 @@ program
   .option('--clean', 'Clean report directory')
   .option('--commits <n>', 'Review last N commits (1-5)', parseInt)
   .option('-n <n>', 'Short alias for --commits', parseInt)
+  .option('--branch [name]', 'Review branch vs main (current branch if no name provided)')
+  .option('--since <branch>', 'Review commits since branching from specified branch')
   .action((options) => {
     // Check if a command was provided (not just options)
     const args = process.argv.slice(2);
     const hasCommand = args.some((arg) => !arg.startsWith('--') && arg !== 'crc');
     
     // If a command was provided but not recognized, show error
-    if (hasCommand && !options.clean && !options.deep && !options.fast && !options.commits && !options.n) {
+    if (hasCommand && !options.clean && !options.deep && !options.fast && !options.commits && !options.n && !options.branch && !options.since) {
       const command = args.find((arg) => !arg.startsWith('--'));
       if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear', 'ignore', 'doctor'].includes(command)) {
         console.error(`\n✗ Unknown command: ${command}`);
@@ -150,6 +152,18 @@ program
     
     // Handle commit count options (-n takes precedence over --commits)
     const commitCount = options.n || options.commits;
+    
+    // Handle branch options
+    const branchName = options.branch;
+    const sinceBranch = options.since;
+    
+    // Validate that only one review type is specified
+    const reviewTypes = [commitCount, branchName !== undefined, sinceBranch].filter(Boolean);
+    if (reviewTypes.length > 1) {
+      console.error('\n✗ Cannot combine --commits, --branch, and --since options');
+      console.error('Use only one review type at a time\n');
+      process.exit(1);
+    }
     
     // Validate commit count if provided
     if (commitCount !== undefined) {
@@ -166,8 +180,14 @@ program
     } else if (options.deep) {
       console.log('Deep scan - coming soon');
     } else {
-      // Default to fast scan (with optional commit count)
-      fastScanCommand(commitCount).catch((err) => {
+      // Default to fast scan (with optional parameters)
+      const scanOptions = {
+        commitCount,
+        branchName,
+        sinceBranch,
+      };
+      
+      fastScanCommand(scanOptions).catch((err) => {
         console.error('Error:', err.message);
         process.exit(1);
       });

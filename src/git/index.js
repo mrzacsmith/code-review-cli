@@ -219,6 +219,202 @@ async function getLastNChangedFiles(commitCount) {
 }
 
 /**
+ * Get current branch name
+ */
+async function getCurrentBranch() {
+  const git = getGit();
+  
+  try {
+    const status = await git.status();
+    return status.current;
+  } catch (err) {
+    if (err.message.includes('not a git repository')) {
+      throw new Error('Not a git repository. Please run this command in a git repository.');
+    }
+    throw err;
+  }
+}
+
+/**
+ * Check if a branch exists
+ */
+async function branchExists(branchName) {
+  const git = getGit();
+  
+  try {
+    const branches = await git.branch(['-a']);
+    // Check local and remote branches
+    return branches.all.some(branch => 
+      branch === branchName || 
+      branch === `origin/${branchName}` ||
+      branch.endsWith(`/${branchName}`)
+    );
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * Get branch diff (branch vs base branch)
+ */
+async function getBranchDiff(branchName, baseBranch = 'main') {
+  const git = getGit();
+
+  try {
+    // If no branch name provided, use current branch
+    const targetBranch = branchName || await getCurrentBranch();
+    
+    if (!targetBranch) {
+      throw new Error('Could not determine current branch');
+    }
+
+    // Validate branches exist
+    if (!(await branchExists(targetBranch))) {
+      throw new Error(`Branch '${targetBranch}' does not exist`);
+    }
+    
+    if (!(await branchExists(baseBranch))) {
+      throw new Error(`Base branch '${baseBranch}' does not exist`);
+    }
+
+    // Get commits on the branch
+    const log = await git.log([`${baseBranch}..${targetBranch}`]);
+    if (log.total === 0) {
+      throw new Error(`No commits found on '${targetBranch}' that are not in '${baseBranch}'`);
+    }
+
+    // Get combined diff
+    const diff = await git.diff([baseBranch, targetBranch]);
+
+    // Get commit information
+    const commits = log.all.map(commit => ({
+      hash: commit.hash,
+      shortHash: commit.hash.substring(0, 7),
+      message: commit.message,
+      author: commit.author_name,
+      date: commit.date,
+    }));
+
+    // Create summary commit object
+    const latestCommit = commits[0];
+    const oldestCommit = commits[commits.length - 1];
+    
+    const rangeCommit = {
+      hash: `${baseBranch}..${targetBranch}`,
+      shortHash: `${baseBranch}..${targetBranch}`,
+      message: `Branch '${targetBranch}' vs '${baseBranch}' (${commits.length} commit${commits.length > 1 ? 's' : ''})`,
+      author: latestCommit.author,
+      date: latestCommit.date,
+    };
+
+    return {
+      commit: rangeCommit,
+      commits,
+      diff,
+      branchName: targetBranch,
+      baseBranch,
+      commitCount: commits.length,
+    };
+  } catch (err) {
+    if (err.message.includes('not a git repository')) {
+      throw new Error('Not a git repository. Please run this command in a git repository.');
+    }
+    throw err;
+  }
+}
+
+/**
+ * Get changed files for branch comparison
+ */
+async function getBranchChangedFiles(branchName, baseBranch = 'main') {
+  const git = getGit();
+
+  try {
+    // If no branch name provided, use current branch
+    const targetBranch = branchName || await getCurrentBranch();
+    
+    if (!targetBranch) {
+      throw new Error('Could not determine current branch');
+    }
+
+    // Validate branches exist
+    if (!(await branchExists(targetBranch))) {
+      throw new Error(`Branch '${targetBranch}' does not exist`);
+    }
+    
+    if (!(await branchExists(baseBranch))) {
+      throw new Error(`Base branch '${baseBranch}' does not exist`);
+    }
+
+    // Get commits on the branch
+    const log = await git.log([`${baseBranch}..${targetBranch}`]);
+    if (log.total === 0) {
+      throw new Error(`No commits found on '${targetBranch}' that are not in '${baseBranch}'`);
+    }
+
+    // Get diff summary
+    const diffSummary = await git.diffSummary([baseBranch, targetBranch]);
+
+    const files = diffSummary.files.map((file) => ({
+      path: file.file,
+      insertions: file.insertions,
+      deletions: file.deletions,
+      changes: file.insertions + file.deletions,
+    }));
+
+    // Get commit information
+    const commits = log.all.map(commit => ({
+      hash: commit.hash,
+      shortHash: commit.hash.substring(0, 7),
+      message: commit.message,
+      author: commit.author_name,
+      date: commit.date,
+    }));
+
+    // Create summary commit object
+    const latestCommit = commits[0];
+    
+    const rangeCommit = {
+      hash: `${baseBranch}..${targetBranch}`,
+      shortHash: `${baseBranch}..${targetBranch}`,
+      message: `Branch '${targetBranch}' vs '${baseBranch}' (${commits.length} commit${commits.length > 1 ? 's' : ''})`,
+      author: latestCommit.author,
+      date: latestCommit.date,
+    };
+
+    return {
+      commit: rangeCommit,
+      commits,
+      files,
+      totalInsertions: diffSummary.insertions,
+      totalDeletions: diffSummary.deletions,
+      branchName: targetBranch,
+      baseBranch,
+      commitCount: commits.length,
+    };
+  } catch (err) {
+    if (err.message.includes('not a git repository')) {
+      throw new Error('Not a git repository. Please run this command in a git repository.');
+    }
+    throw err;
+  }
+}
+
+/**
+ * Get commits since branching from specified branch (alias for getBranchDiff)
+ */
+async function getCommitsSince(baseBranch) {
+  return getBranchDiff(null, baseBranch);
+}
+
+/**
+ * Get changed files since branching from specified branch (alias for getBranchChangedFiles)
+ */
+async function getChangedFilesSince(baseBranch) {
+  return getBranchChangedFiles(null, baseBranch);
+}
+
+/**
  * Check if there are uncommitted changes
  */
 async function hasUncommittedChanges() {
@@ -246,6 +442,12 @@ module.exports = {
   getLastNCommitsDiff,
   getChangedFiles,
   getLastNChangedFiles,
+  getCurrentBranch,
+  branchExists,
+  getBranchDiff,
+  getBranchChangedFiles,
+  getCommitsSince,
+  getChangedFilesSince,
   hasUncommittedChanges,
 };
 

@@ -28,6 +28,11 @@ output:
   reports_dir: .code-reviews
   format: markdown
 
+multi_commit:
+  max_commits: 5
+  default_base_branch: main
+  include_merge_commits: false
+
 rules_file: .cursorrules
 
 dependency_depth: 2
