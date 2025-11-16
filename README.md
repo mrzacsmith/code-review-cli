@@ -46,3 +46,4 @@ Configuration is stored in `.code-review.config` (YAML format). See the generate
 
 MIT
 
+# code-review-cli
