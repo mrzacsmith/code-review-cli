@@ -30,11 +30,12 @@ async function initCommand() {
     }
 
     console.log(chalk.blue('\n📝 Next steps:'));
-    console.log(chalk.gray('1. Edit .code-review.config to configure your LLM providers'));
-    console.log(chalk.gray('2. For API keys, either:'));
+    console.log(chalk.gray('1. Add code-review files to .gitignore: `crc ignore`'));
+    console.log(chalk.gray('2. Edit .code-review.config to configure your LLM providers'));
+    console.log(chalk.gray('3. For API keys, either:'));
     console.log(chalk.gray('   - Add them to global config: ~/.code-review-cli/config.yaml'));
     console.log(chalk.gray('   - Or set environment variables (env:VARIABLE_NAME in config)'));
-    console.log(chalk.gray('3. Run `crc` to review your latest commit\n'));
+    console.log(chalk.gray('4. Run `crc` to review your latest commit\n'));
   } catch (err) {
     console.error(chalk.red(`✗ Error: ${err.message}`));
     process.exit(1);

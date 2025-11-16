@@ -4,6 +4,7 @@ const { fastScanCommand } = require('./commands/fastScan');
 const { setupGlobalCommand } = require('./commands/setupGlobal');
 const { clearCommand } = require('./commands/clear');
 const { configCommand } = require('./commands/config');
+const { ignoreCommand } = require('./commands/ignore');
 const {
   showPromptCommand,
   editPromptCommand,
@@ -45,6 +46,11 @@ program
   .command('init')
   .description('Initialize code review configuration')
   .action(initCommand);
+
+program
+  .command('ignore')
+  .description('Add code-review files to .gitignore')
+  .action(ignoreCommand);
 
 program
   .command('setup-global')
@@ -120,7 +126,7 @@ program
     // If a command was provided but not recognized, show error
     if (hasCommand && !options.clean && !options.deep && !options.fast) {
       const command = args.find((arg) => !arg.startsWith('--'));
-      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear'].includes(command)) {
+      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear', 'ignore'].includes(command)) {
         console.error(`\n✗ Unknown command: ${command}`);
         console.error(`\nRun 'crc --help' to see available commands.\n`);
         process.exit(1);

@@ -15,12 +15,17 @@ npm install -g @mrzacsmith/code-review-cli
 crc init
 ```
 
-2. Set up global API keys (optional, for OpenAI/Anthropic/OpenRouter):
+2. Add code-review files to .gitignore:
+```bash
+crc ignore
+```
+
+3. Set up global API keys (optional, for OpenAI/Anthropic/OpenRouter):
 ```bash
 crc setup-global
 ```
 
-3. Review your latest commit:
+4. Review your latest commit:
 ```bash
 crc
 ```
@@ -42,6 +47,10 @@ crc
 - **`crc init`** - Initialize configuration and create `.code-review.config`
   - Creates a project-specific configuration file
   - Sets up default provider settings
+
+- **`crc ignore`** - Add code-review files to `.gitignore`
+  - Adds `.code-reviews/` and `.code-review.config` to `.gitignore`
+  - Prevents committing user-specific configuration and reports
 
 - **`crc setup-global`** - Set up global configuration file for API keys
   - Creates `~/.code-review-cli/config.yaml` for storing API keys
