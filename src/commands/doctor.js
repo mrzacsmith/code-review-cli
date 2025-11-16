@@ -213,9 +213,9 @@ async function checkOpenAI(config, testConnection = false) {
 }
 
 /**
- * Check Anthropic status
+ * Check Anthropic status with enhanced connectivity and model validation
  */
-async function checkAnthropic(config) {
+async function checkAnthropic(config, testConnection = false) {
   const anthropicConfig = config.providers?.anthropic;
   if (!anthropicConfig || !anthropicConfig.enabled) {
     return {
@@ -225,26 +225,132 @@ async function checkAnthropic(config) {
     };
   }
 
-  const apiKey = anthropicConfig.api_key;
-  if (!apiKey || apiKey.startsWith('env:')) {
-    const envVar = apiKey?.replace('env:', '') || 'ANTHROPIC_API_KEY';
-    const hasKey = !!process.env[envVar];
-    return {
-      provider: 'Anthropic',
-      status: hasKey ? 'configured' : 'missing_key',
-      message: hasKey
-        ? `API key found in ${envVar}`
-        : `API key not found. Set ${envVar} environment variable`,
-      configuredModels: anthropicConfig.models || [],
-    };
+  // Resolve API key
+  let resolvedApiKey = anthropicConfig.api_key;
+  if (!resolvedApiKey || resolvedApiKey.startsWith('env:')) {
+    const envVar = resolvedApiKey?.replace('env:', '') || 'ANTHROPIC_API_KEY';
+    resolvedApiKey = process.env[envVar];
+    
+    if (!resolvedApiKey) {
+      return {
+        provider: 'Anthropic',
+        status: 'missing_key',
+        message: `API key not found. Set ${envVar} environment variable`,
+        configuredModels: anthropicConfig.models || [],
+      };
+    }
   }
 
-  return {
+  const result = {
     provider: 'Anthropic',
     status: 'configured',
     message: 'API key is set',
     configuredModels: anthropicConfig.models || [],
   };
+
+  // If not testing connection, return basic config check
+  if (!testConnection) {
+    return result;
+  }
+
+  // Enhanced connection and model validation
+  try {
+    const axios = require('axios');
+    
+    // Anthropic doesn't have a models list endpoint, so we'll test with known models
+    const knownAnthropicModels = [
+      'claude-3-5-sonnet-20241022',
+      'claude-3-5-sonnet-20240620',
+      'claude-3-opus-20240229',
+      'claude-3-sonnet-20240229',
+      'claude-3-haiku-20240307',
+      'claude-2.1',
+      'claude-2.0',
+      'claude-instant-1.2'
+    ];
+
+    // Test 1: Connection test with a minimal message
+    const testResponse = await axios.post(
+      'https://api.anthropic.com/v1/messages',
+      {
+        model: 'claude-3-haiku-20240307', // Use cheapest model for testing
+        max_tokens: 5,
+        messages: [{ role: 'user', content: 'test' }]
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': resolvedApiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        timeout: 10000
+      }
+    );
+
+    result.status = 'connected';
+    result.message = 'Successfully connected to Anthropic API';
+    result.availableModels = knownAnthropicModels;
+
+    // Test 2: Model validation against known models
+    const configuredModels = anthropicConfig.models || [];
+    const validModels = [];
+    const invalidModels = [];
+
+    for (const model of configuredModels) {
+      if (knownAnthropicModels.includes(model)) {
+        validModels.push(model);
+      } else {
+        invalidModels.push(model);
+      }
+    }
+
+    result.validModels = validModels;
+    result.invalidModels = invalidModels;
+
+    // Test 3: Completion test passed (we already did it above)
+    result.completionTest = 'passed';
+
+    return result;
+
+  } catch (error) {
+    // Categorize the error
+    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      return {
+        ...result,
+        status: 'connection_failed',
+        message: 'Cannot connect to Anthropic API. Check your internet connection.',
+        error: error.message,
+      };
+    } else if (error.response?.status === 401) {
+      return {
+        ...result,
+        status: 'auth_failed',
+        message: 'Invalid API key. Check your Anthropic API key.',
+        error: error.response?.data?.error?.message || error.message,
+      };
+    } else if (error.response?.status === 429) {
+      return {
+        ...result,
+        status: 'rate_limited',
+        message: 'Rate limited by Anthropic API. Try again later.',
+        error: error.response?.data?.error?.message || error.message,
+      };
+    } else if (error.response?.status === 400) {
+      return {
+        ...result,
+        status: 'api_error',
+        message: 'Bad request to Anthropic API. Check your configuration.',
+        error: error.response?.data?.error?.message || error.message,
+      };
+    } else {
+      return {
+        ...result,
+        status: 'api_error',
+        message: 'Anthropic API error occurred.',
+        error: error.response?.data?.error?.message || error.message,
+      };
+    }
+  }
 }
 
 /**
@@ -415,7 +521,7 @@ async function doctorCommand(provider) {
       const results = await Promise.all([
         checkOllama(config),
         checkOpenAI(config, false), // Basic check for general overview
-        checkAnthropic(config),
+        checkAnthropic(config, false), // Basic check for general overview
         checkOpenRouter(config),
       ]);
       displayGeneralResults(results);
