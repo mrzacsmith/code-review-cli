@@ -42,7 +42,9 @@ crc doctor ollama
 
 5. Review your latest commit:
 ```bash
-crc
+crc                    # Review latest commit
+crc --commits 3        # Review last 3 commits
+crc -n 2               # Review last 2 commits
 ```
 
 ## Commands
@@ -52,6 +54,11 @@ crc
 - **`crc`** or **`crc --fast`** - Fast scan of latest commit (default)
   - Reviews only changed files and their direct dependencies
   - Fast and efficient for quick feedback
+
+- **`crc --commits N`** or **`crc -n N`** - Review last N commits (1-5)
+  - Reviews combined changes from the last N commits
+  - Uses efficient combined diff approach
+  - Examples: `crc --commits 3`, `crc -n 2`
 
 - **`crc --deep`** - Deep scan with transitive dependencies
   - Reviews changed files and all transitive dependencies
@@ -240,6 +247,14 @@ Each report includes:
 ## Coming Soon
 
 The following features are planned for future releases:
+
+- **`crc --branch`** - Review branch vs main comparison
+  - Reviews all commits on current branch vs main
+  - Useful for PR preparation and feature review
+
+- **`crc --since <branch>`** - Review commits since branching
+  - Reviews commits since branching from specified branch
+  - Flexible branch comparison options
 
 - **`crc --deep`** - Deep scan with transitive dependencies
   - Reviews changed files and all transitive dependencies
