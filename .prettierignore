@@ -1,0 +1,6 @@
+node_modules/
+coverage/
+.code-reviews/
+*.md
+!README.md
+
