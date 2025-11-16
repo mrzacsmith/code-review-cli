@@ -12,19 +12,58 @@ const {
 const execAsync = promisify(exec);
 
 /**
- * Get default editor (EDITOR env var or fallback)
+ * Get editor command (prefer GUI editors)
  */
-function getEditor() {
-  return process.env.EDITOR || process.env.VISUAL || 'nano';
+async function getEditorCommand() {
+  // Check for Cursor first (if available)
+  try {
+    await execAsync('which cursor');
+    return 'cursor';
+  } catch {
+    // Check for VS Code
+    try {
+      await execAsync('which code');
+      return 'code';
+    } catch {
+      // Fall back to environment variable or system default
+      return process.env.EDITOR || process.env.VISUAL || (process.platform === 'darwin' ? 'open -e' : 'nano');
+    }
+  }
 }
 
 /**
- * Edit file in default editor
+ * Edit file in editor (opens in GUI editor if available)
  */
 async function editFile(filePath) {
-  const editor = getEditor();
+  const editor = await getEditorCommand();
+  
   try {
-    await execAsync(`${editor} "${filePath}"`);
+    if (editor === 'cursor' || editor === 'code') {
+      // Open in Cursor/VS Code (non-blocking, opens in new tab)
+      execAsync(`${editor} "${filePath}"`).catch(() => {
+        // Ignore errors - editor might already be open
+      });
+      
+      console.log(chalk.blue(`\n📝 File opened in ${editor === 'cursor' ? 'Cursor' : 'VS Code'}`));
+      console.log(chalk.gray('Make your changes and save the file, then press Enter to continue...\n'));
+      
+      // Wait for user to press Enter
+      const readline = require('readline');
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      
+      return new Promise((resolve) => {
+        rl.question(chalk.blue('Press Enter after saving the file... '), () => {
+          rl.close();
+          resolve();
+        });
+      });
+    } else {
+      // Terminal editor (nano, vim, etc.) - blocking
+      await execAsync(`${editor} "${filePath}"`);
+    }
   } catch (err) {
     // If editor command fails, try opening with system default
     if (process.platform === 'darwin') {

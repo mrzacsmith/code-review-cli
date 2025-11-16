@@ -129,6 +129,9 @@ async function fastScanCommand() {
     if (successfulReviews === 0) {
       process.exit(1);
     }
+    
+    // Exit successfully
+    process.exit(0);
   } catch (err) {
     if (spinner.isSpinning) {
       spinner.stop();

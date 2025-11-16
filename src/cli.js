@@ -2,6 +2,7 @@ const { Command } = require('commander');
 const { initCommand } = require('./commands/init');
 const { fastScanCommand } = require('./commands/fastScan');
 const { setupGlobalCommand } = require('./commands/setupGlobal');
+const { clearCommand } = require('./commands/clear');
 const {
   showPromptCommand,
   editPromptCommand,
@@ -31,6 +32,11 @@ program
   .action(() => {
     console.log('Summarize command - coming soon');
   });
+
+program
+  .command('clear')
+  .description('Remove all code review reports')
+  .action(clearCommand);
 
 // Config command (placeholder - will be implemented)
 program
@@ -94,7 +100,7 @@ program
     // If a command was provided but not recognized, show error
     if (hasCommand && !options.clean && !options.deep && !options.fast) {
       const command = args.find((arg) => !arg.startsWith('--'));
-      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt'].includes(command)) {
+      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear'].includes(command)) {
         console.error(`\n✗ Unknown command: ${command}`);
         console.error(`\nRun 'crc --help' to see available commands.\n`);
         process.exit(1);
@@ -108,7 +114,10 @@ program
       console.log('Deep scan - coming soon');
     } else {
       // Default to fast scan
-      fastScanCommand();
+      fastScanCommand().catch((err) => {
+        console.error('Error:', err.message);
+        process.exit(1);
+      });
     }
   });
 
