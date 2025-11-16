@@ -25,7 +25,14 @@ crc ignore
 crc setup-global
 ```
 
-4. Review your latest commit:
+4. Check your setup (optional):
+```bash
+crc doctor
+# or for Ollama specifically to see installed models:
+crc doctor ollama
+```
+
+5. Review your latest commit:
 ```bash
 crc
 ```
@@ -51,6 +58,18 @@ crc
 - **`crc ignore`** - Add code-review files to `.gitignore`
   - Adds `.code-reviews/` and `.code-review.config` to `.gitignore`
   - Prevents committing user-specific configuration and reports
+
+- **`crc doctor`** - Check provider status and configuration
+  - General health check for all providers
+  - Shows status of Ollama, OpenAI, Anthropic, and OpenRouter
+  - Verifies API keys and configuration
+
+- **`crc doctor ollama`** - Check Ollama status and list installed models
+  - Lists all installed Ollama models with exact names
+  - Compares configured models vs installed models
+  - Shows which models are found/missing
+  - Suggests `ollama pull` commands for missing models
+  - Helps find the correct model names for your config
 
 - **`crc setup-global`** - Set up global configuration file for API keys
   - Creates `~/.code-review-cli/config.yaml` for storing API keys

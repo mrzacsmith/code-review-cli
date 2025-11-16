@@ -5,6 +5,7 @@ const { setupGlobalCommand } = require('./commands/setupGlobal');
 const { clearCommand } = require('./commands/clear');
 const { configCommand } = require('./commands/config');
 const { ignoreCommand } = require('./commands/ignore');
+const { doctorCommand } = require('./commands/doctor');
 const {
   showPromptCommand,
   editPromptCommand,
@@ -51,6 +52,17 @@ program
   .command('ignore')
   .description('Add code-review files to .gitignore')
   .action(ignoreCommand);
+
+program
+  .command('doctor')
+  .description('Check provider status and configuration')
+  .argument('[provider]', 'provider to check (e.g., ollama)')
+  .action((provider) => {
+    doctorCommand(provider).catch((err) => {
+      console.error('Error:', err.message);
+      process.exit(1);
+    });
+  });
 
 program
   .command('setup-global')
@@ -126,7 +138,7 @@ program
     // If a command was provided but not recognized, show error
     if (hasCommand && !options.clean && !options.deep && !options.fast) {
       const command = args.find((arg) => !arg.startsWith('--'));
-      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear', 'ignore'].includes(command)) {
+      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear', 'ignore', 'doctor'].includes(command)) {
         console.error(`\n✗ Unknown command: ${command}`);
         console.error(`\nRun 'crc --help' to see available commands.\n`);
         process.exit(1);
