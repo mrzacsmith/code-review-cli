@@ -1,5 +1,4 @@
 const simpleGit = require('simple-git');
-const path = require('path');
 
 /**
  * Get git instance for current working directory
@@ -41,17 +40,12 @@ async function getLatestCommit() {
  */
 async function getLatestCommitDiff() {
   const git = getGit();
-
-  try {
-    const commit = await getLatestCommit();
-    const diff = await git.show([commit.hash, '--format=', '--']);
-    return {
-      commit,
-      diff,
-    };
-  } catch (err) {
-    throw err;
-  }
+  const commit = await getLatestCommit();
+  const diff = await git.show([commit.hash, '--format=', '--']);
+  return {
+    commit,
+    diff,
+  };
 }
 
 /**
@@ -89,6 +83,9 @@ async function getChangedFiles() {
       totalDeletions: diffSummary.deletions,
     };
   } catch (err) {
+    if (err.message.includes('not a git repository')) {
+      throw new Error('Not a git repository. Please run this command in a git repository.');
+    }
     throw err;
   }
 }

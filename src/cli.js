@@ -1,5 +1,6 @@
 const { Command } = require('commander');
 const { initCommand } = require('./commands/init');
+const { fastScanCommand } = require('./commands/fastScan');
 
 const program = new Command();
 
@@ -30,7 +31,8 @@ program
     } else if (options.deep) {
       console.log('Deep scan - coming soon');
     } else {
-      console.log('Fast scan - coming soon');
+      // Default to fast scan
+      fastScanCommand();
     }
   });
 

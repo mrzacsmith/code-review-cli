@@ -1,5 +1,4 @@
 const fs = require('fs').promises;
-const path = require('path');
 const chalk = require('chalk');
 const { DEFAULT_CONFIG } = require('../config/template');
 
