@@ -580,6 +580,96 @@ function displayOllamaResults(result) {
 }
 
 /**
+ * Check all AI providers (excluding ollama) with full connection testing
+ */
+async function checkAllAIProviders(config) {
+  const results = await Promise.all([
+    checkOpenAI(config, true), // Full connection test
+    checkAnthropic(config, true), // Full connection test
+    checkOpenRouter(config, true), // Full connection test
+  ]);
+  
+  return results;
+}
+
+/**
+ * Display AI providers test results
+ */
+function displayAIResults(results) {
+  header('AI Providers Health Check');
+
+  for (const result of results) {
+    console.log(chalk.bold(`\n${result.provider}:`));
+
+    if (result.status === 'disabled') {
+      console.log(chalk.gray(`  ${result.message}`));
+    } else if (result.status === 'missing_key') {
+      warning(`  ⚠️  ${result.message}`);
+    } else if (result.status === 'configured') {
+      success(`  ✓ ${result.message}`);
+      if (result.configuredModels && result.configuredModels.length > 0) {
+        console.log(chalk.gray(`  Models: ${result.configuredModels.join(', ')}`));
+      }
+    } else if (result.status === 'connected') {
+      success(`  ✓ ${result.message}`);
+      
+      // Show model validation results
+      if (result.validModels && result.validModels.length > 0) {
+        console.log(chalk.green(`  ✓ Valid models: ${result.validModels.join(', ')}`));
+      }
+      if (result.invalidModels && result.invalidModels.length > 0) {
+        console.log(chalk.red(`  ✗ Invalid models: ${result.invalidModels.join(', ')}`));
+      }
+      
+      // Show completion test results
+      if (result.completionTest === 'passed') {
+        console.log(chalk.green(`  ✓ Completion test passed`));
+        if (result.testedModel) {
+          console.log(chalk.gray(`    Tested with: ${result.testedModel}`));
+        }
+      } else if (result.completionTest === 'failed') {
+        console.log(chalk.red(`  ✗ Completion test failed`));
+        if (result.completionError) {
+          console.log(chalk.gray(`    Error: ${result.completionError}`));
+        }
+      }
+      
+      // Show available models count for providers that support it
+      if (result.availableModels && result.availableModels.length > 0) {
+        console.log(chalk.gray(`  Available models: ${result.availableModels.length}`));
+      }
+    } else if (result.status === 'connection_failed') {
+      error(`  ✗ ${result.message}`);
+      if (result.error) {
+        console.log(chalk.gray(`    ${result.error}`));
+      }
+    } else if (result.status === 'auth_failed') {
+      error(`  ✗ ${result.message}`);
+      if (result.error) {
+        console.log(chalk.gray(`    ${result.error}`));
+      }
+    } else if (result.status === 'rate_limited') {
+      warning(`  ⚠️  ${result.message}`);
+      if (result.error) {
+        console.log(chalk.gray(`    ${result.error}`));
+      }
+    } else if (result.status === 'insufficient_credits') {
+      warning(`  ⚠️  ${result.message}`);
+      if (result.error) {
+        console.log(chalk.gray(`    ${result.error}`));
+      }
+    } else if (result.status === 'api_error') {
+      error(`  ✗ ${result.message}`);
+      if (result.error) {
+        console.log(chalk.gray(`    ${result.error}`));
+      }
+    }
+  }
+
+  console.log(chalk.blue(`\n💡 Tip: Use "crc doctor <provider>" for detailed provider-specific information\n`));
+}
+
+/**
  * Display general doctor results
  */
 function displayGeneralResults(results) {
@@ -609,7 +699,10 @@ function displayGeneralResults(results) {
     }
   }
 
-  console.log(chalk.blue(`\n💡 Tip: Use "crc doctor ollama" for detailed Ollama model information\n`));
+  console.log(chalk.blue(`\n💡 Tips:`));
+  console.log(chalk.blue(`  • Use "crc doctor ollama" for detailed Ollama model information`));
+  console.log(chalk.blue(`  • Use "crc doctor ai" to test all AI providers with full connectivity`));
+  console.log(chalk.blue(`  • Use "crc doctor <provider>" for detailed provider-specific testing\n`));
 }
 
 /**
@@ -629,9 +722,21 @@ async function doctorCommand(provider) {
     if (provider === 'ollama') {
       const result = await checkOllama(config);
       displayOllamaResults(result);
+    } else if (provider === 'ai') {
+      const results = await checkAllAIProviders(config);
+      displayAIResults(results);
+    } else if (provider === 'openai') {
+      const result = await checkOpenAI(config, true);
+      displayAIResults([result]);
+    } else if (provider === 'anthropic') {
+      const result = await checkAnthropic(config, true);
+      displayAIResults([result]);
+    } else if (provider === 'openrouter') {
+      const result = await checkOpenRouter(config, true);
+      displayAIResults([result]);
     } else if (provider) {
       error(`Unknown provider: ${provider}`);
-      console.log(chalk.gray(`Available providers: ollama, openai, anthropic, openrouter\n`));
+      console.log(chalk.gray(`Available providers: ollama, openai, anthropic, openrouter, ai\n`));
       process.exit(1);
     } else {
       // General health check (basic config check only)

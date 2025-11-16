@@ -59,7 +59,7 @@ program
 program
   .command('doctor')
   .description('Check provider status and configuration')
-  .argument('[provider]', 'provider to check (e.g., ollama)')
+  .argument('[provider]', 'provider to check (ollama, openai, anthropic, openrouter, ai)')
   .action((provider) => {
     if (provider === 'help') {
       showEnhancedHelp('doctor').catch((err) => {

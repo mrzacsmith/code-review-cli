@@ -5,7 +5,7 @@ CLI tool for AI-powered code review of git commits using multiple LLM providers 
 ## ✨ Key Features
 
 - 🚀 **Beautiful Terminal Headers** - Clear visual separation with colorful headers showing command context, version, and timing
-- ❓ **Enhanced Help System** - Discoverable help with `crc ?`, context-aware guidance, and live status display
+- ❓ **Enhanced Help System** - Discoverable help with `crc help`, context-aware guidance, and live status display
 - 🔄 **Multi-Commit Reviews** - Review last N commits (`crc --commits 3`) or branch comparisons (`crc --branch`)
 - 🤖 **Multiple LLM Providers** - Support for Ollama (local), OpenAI, Anthropic, and OpenRouter
 - ⚡ **Fast & Efficient** - Smart diff analysis focusing only on changed files
@@ -63,8 +63,7 @@ crc --since main          # Review commits since branching from main
 6. Get help anytime:
 ```bash
 crc help                  # Enhanced help with colors and live status
-crc ?                     # Same as help (more discoverable)
-crc doctor ?              # Context-aware help for doctor command
+crc doctor help           # Context-aware help for doctor command
 crc config help           # Context-aware help for config command
 ```
 
@@ -96,16 +95,16 @@ crc config help           # Context-aware help for config command
 
 ### Help Commands
 
-- **`crc help`** or **`crc ?`** - Enhanced help with colors and live status
+- **`crc help`** - Enhanced help with colors and live status
   - Shows organized command sections with emoji icons
   - Displays real-time configuration and model availability
   - Provides contextual tips and guidance
-  - Examples: `crc help`, `crc ?`
+  - Example: `crc help`
 
-- **`crc <command> ?`** or **`crc <command> help`** - Context-aware help
+- **`crc <command> help`** - Context-aware help
   - Shows specific help for individual commands
   - Includes live status and available options
-  - Examples: `crc doctor ?`, `crc config help`
+  - Examples: `crc doctor help`, `crc config help`
 
 ### Configuration Commands
 
@@ -120,7 +119,7 @@ crc config help           # Context-aware help for config command
 - **`crc doctor`** - Check provider status and configuration
   - General health check for all providers
   - Shows status of Ollama, OpenAI, Anthropic, and OpenRouter
-  - Verifies API keys and configuration
+  - Verifies API keys and configuration (basic checks only)
 
 - **`crc doctor ollama`** - Check Ollama status and list installed models
   - Lists all installed Ollama models with exact names
@@ -128,6 +127,30 @@ crc config help           # Context-aware help for config command
   - Shows which models are found/missing
   - Suggests `ollama pull` commands for missing models
   - Helps find the correct model names for your config
+
+- **`crc doctor ai`** - Test all AI providers with full connectivity
+  - Tests OpenAI, Anthropic, and OpenRouter with actual API calls
+  - Validates configured models are available
+  - Performs small completion tests to verify functionality
+  - Shows detailed connection status and error information
+
+- **`crc doctor openai`** - Test OpenAI provider with full connectivity
+  - Connects to OpenAI API and lists available models
+  - Validates configured models exist
+  - Tests completion functionality with minimal cost
+  - Shows detailed error information for troubleshooting
+
+- **`crc doctor anthropic`** - Test Anthropic provider with full connectivity
+  - Connects to Anthropic API with actual test request
+  - Validates configured models against known Anthropic models
+  - Tests completion functionality with minimal cost
+  - Shows detailed error information for troubleshooting
+
+- **`crc doctor openrouter`** - Test OpenRouter provider with full connectivity
+  - Connects to OpenRouter API and lists available models
+  - Validates configured models exist
+  - Tests completion functionality with gpt-4o-mini fallback
+  - Shows detailed error information including credit status
 
 - **`crc setup-global`** - Set up global configuration file for API keys
   - Creates `~/.code-review-cli/config.yaml` for storing API keys
@@ -208,7 +231,7 @@ providers:
     enabled: true
     api_key: env:OPENAI_API_KEY
     models:
-      - gpt-4
+      - gpt-4o-mini
 
   anthropic:
     enabled: false
