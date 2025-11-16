@@ -69,7 +69,7 @@ async function fastScanCommand() {
       dependencyFiles: dependenciesResult.files,
     });
 
-    const prompt = buildReviewPrompt(context);
+    const prompt = await buildReviewPrompt(context);
 
     // Create providers
     spinner.text = 'Initializing providers...';

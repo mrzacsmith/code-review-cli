@@ -2,6 +2,11 @@ const { Command } = require('commander');
 const { initCommand } = require('./commands/init');
 const { fastScanCommand } = require('./commands/fastScan');
 const { setupGlobalCommand } = require('./commands/setupGlobal');
+const {
+  showPromptCommand,
+  editPromptCommand,
+  resetPromptCommand,
+} = require('./commands/prompt');
 
 const program = new Command();
 
@@ -45,21 +50,32 @@ program
     }
   });
 
-// Prompt command (placeholder - will be implemented)
+// Prompt command
 program
   .command('prompt')
   .description('Manage review prompt templates')
   .argument('[action]', 'action: edit, show, or reset')
-  .option('--global', 'Edit global prompt template')
+  .option('--global', 'Use global prompt template (default: project)')
   .action((action, options) => {
+    const useGlobal = options.global || false;
+
     if (!action) {
       console.log('Usage: crc prompt <edit|show|reset>');
       console.log('  crc prompt edit     - Edit prompt template');
       console.log('  crc prompt show     - Show current prompt template');
       console.log('  crc prompt reset    - Reset to default prompt');
+      console.log('\nOptions:');
+      console.log('  --global            - Use global template instead of project');
       process.exit(1);
+    } else if (action === 'show') {
+      showPromptCommand(useGlobal);
+    } else if (action === 'edit') {
+      editPromptCommand(useGlobal);
+    } else if (action === 'reset') {
+      resetPromptCommand(useGlobal);
     } else {
-      console.log(`Prompt command "${action}" - coming soon`);
+      console.error(`\n✗ Unknown action: ${action}`);
+      console.log('Usage: crc prompt <edit|show|reset>\n');
       process.exit(1);
     }
   });
