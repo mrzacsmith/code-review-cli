@@ -71,6 +71,23 @@ async function fastScanCommand() {
 
     const prompt = await buildReviewPrompt(context);
 
+    // Calculate model counts from enabled providers (based on config)
+    let localModels = 0;
+    let apiModels = 0;
+    let totalModels = 0;
+    
+    for (const provider of enabledProviders) {
+      const modelCount = (provider.models || []).length;
+      totalModels += modelCount;
+      
+      // ollama is local, everything else is API
+      if (provider.name === 'ollama') {
+        localModels += modelCount;
+      } else {
+        apiModels += modelCount;
+      }
+    }
+
     // Create providers
     spinner.text = 'Initializing providers...';
     const providers = createProviders(config);
@@ -84,7 +101,7 @@ async function fastScanCommand() {
     // Run reviews in parallel
     spinner.stop();
     header('Running Code Reviews');
-    info(`Reviewing with ${providers.length} provider(s)...\n`);
+    info(`Reviewing with ${totalModels} LLM model(s)...\n`);
 
     const reviewSpinner = createSpinner('Sending requests to models...');
     const results = await Promise.all(
@@ -119,7 +136,9 @@ async function fastScanCommand() {
     displaySummary({
       commit: changedFilesData.commit,
       filesChanged: changedFilesData.files,
-      providersUsed: providers.length,
+      localModels,
+      apiModels,
+      totalModels,
       successfulReviews,
       failedReviews: totalReviews - successfulReviews,
       reportPath: report.filePath,

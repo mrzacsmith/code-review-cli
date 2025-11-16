@@ -51,7 +51,18 @@ function displaySummary(stats) {
 
   console.log(chalk.gray(`Commit: ${stats.commit.shortHash}`));
   console.log(chalk.gray(`Files Changed: ${stats.filesChanged.length}`));
-  console.log(chalk.gray(`Models Used: ${stats.providersUsed}`));
+  
+  // Display Local LLMs and API LLMs separately
+  if (stats.localModels > 0 && stats.apiModels > 0) {
+    console.log(chalk.gray(`Local LLMs: ${stats.localModels}`));
+    console.log(chalk.gray(`API LLMs: ${stats.apiModels}`));
+  } else if (stats.localModels > 0) {
+    console.log(chalk.gray(`Local LLMs: ${stats.localModels}`));
+  } else if (stats.apiModels > 0) {
+    console.log(chalk.gray(`API LLMs: ${stats.apiModels}`));
+  }
+  
+  console.log(chalk.gray(`Total LLM Models: ${stats.totalModels}`));
   console.log(chalk.gray(`Successful Reviews: ${stats.successfulReviews}`));
   console.log(chalk.gray(`Failed Reviews: ${stats.failedReviews}`));
 

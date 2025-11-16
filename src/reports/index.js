@@ -55,6 +55,20 @@ function generateReport(data) {
     results,
   } = data;
 
+  // Calculate total models from providers
+  const totalModels = providers.reduce((sum, p) => sum + (p.models?.length || 0), 0);
+  let localModels = 0;
+  let apiModels = 0;
+  
+  for (const provider of providers) {
+    const modelCount = (provider.models || []).length;
+    if (provider.name === 'ollama') {
+      localModels += modelCount;
+    } else {
+      apiModels += modelCount;
+    }
+  }
+
   let report = `# Code Review Report\n\n`;
   report += `**Date:** ${formatDateForReport(new Date())}\n`;
   report += `**Commit:** ${commit.hash}\n`;
@@ -62,7 +76,17 @@ function generateReport(data) {
   report += `**Message:** ${commit.message}\n`;
   report += `**Author:** ${commit.author}\n`;
   report += `**Scan Type:** ${scanType}\n`;
-  report += `**Models Used:** ${providers.length}\n\n`;
+  
+  if (localModels > 0 && apiModels > 0) {
+    report += `**Local LLMs:** ${localModels}\n`;
+    report += `**API LLMs:** ${apiModels}\n`;
+  } else if (localModels > 0) {
+    report += `**Local LLMs:** ${localModels}\n`;
+  } else if (apiModels > 0) {
+    report += `**API LLMs:** ${apiModels}\n`;
+  }
+  
+  report += `**Total LLM Models:** ${totalModels}\n\n`;
 
   // Files changed summary
   if (filesChanged && filesChanged.length > 0) {
