@@ -89,9 +89,9 @@ async function checkOllama(config) {
 }
 
 /**
- * Check OpenAI status
+ * Check OpenAI status with enhanced connectivity and model validation
  */
-async function checkOpenAI(config) {
+async function checkOpenAI(config, testConnection = false) {
   const openaiConfig = config.providers?.openai;
   if (!openaiConfig || !openaiConfig.enabled) {
     return {
@@ -101,26 +101,115 @@ async function checkOpenAI(config) {
     };
   }
 
-  const apiKey = openaiConfig.api_key;
-  if (!apiKey || apiKey.startsWith('env:')) {
-    const envVar = apiKey?.replace('env:', '') || 'OPENAI_API_KEY';
-    const hasKey = !!process.env[envVar];
-    return {
-      provider: 'OpenAI',
-      status: hasKey ? 'configured' : 'missing_key',
-      message: hasKey
-        ? `API key found in ${envVar}`
-        : `API key not found. Set ${envVar} environment variable`,
-      configuredModels: openaiConfig.models || [],
-    };
+  // Resolve API key
+  let resolvedApiKey = openaiConfig.api_key;
+  if (!resolvedApiKey || resolvedApiKey.startsWith('env:')) {
+    const envVar = resolvedApiKey?.replace('env:', '') || 'OPENAI_API_KEY';
+    resolvedApiKey = process.env[envVar];
+    
+    if (!resolvedApiKey) {
+      return {
+        provider: 'OpenAI',
+        status: 'missing_key',
+        message: `API key not found. Set ${envVar} environment variable`,
+        configuredModels: openaiConfig.models || [],
+      };
+    }
   }
 
-  return {
+  const result = {
     provider: 'OpenAI',
     status: 'configured',
     message: 'API key is set',
     configuredModels: openaiConfig.models || [],
   };
+
+  // If not testing connection, return basic config check
+  if (!testConnection) {
+    return result;
+  }
+
+  // Enhanced connection and model validation
+  try {
+    const { OpenAI } = require('openai');
+    const client = new OpenAI({
+      apiKey: resolvedApiKey,
+      timeout: 10000, // 10 second timeout
+    });
+
+    // Test 1: Connection test - list models
+    const modelsResponse = await client.models.list();
+    const availableModels = modelsResponse.data.map(m => m.id);
+    
+    result.status = 'connected';
+    result.message = 'Successfully connected to OpenAI API';
+    result.availableModels = availableModels;
+
+    // Test 2: Model validation
+    const configuredModels = openaiConfig.models || [];
+    const validModels = [];
+    const invalidModels = [];
+
+    for (const model of configuredModels) {
+      if (availableModels.includes(model)) {
+        validModels.push(model);
+      } else {
+        invalidModels.push(model);
+      }
+    }
+
+    result.validModels = validModels;
+    result.invalidModels = invalidModels;
+
+    // Test 3: Small completion test with first valid model
+    if (validModels.length > 0) {
+      try {
+        await client.chat.completions.create({
+          model: validModels[0],
+          messages: [{ role: 'user', content: 'test' }],
+          max_tokens: 5,
+        });
+        result.completionTest = 'passed';
+      } catch (completionError) {
+        result.completionTest = 'failed';
+        result.completionError = completionError.message;
+      }
+    }
+
+    return result;
+
+  } catch (error) {
+    // Categorize the error
+    if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      return {
+        ...result,
+        status: 'connection_failed',
+        message: 'Cannot connect to OpenAI API. Check your internet connection.',
+        error: error.message,
+      };
+    } else if (error.status === 401) {
+      return {
+        ...result,
+        status: 'auth_failed',
+        message: 'Invalid API key. Check your OpenAI API key.',
+        error: error.message,
+      };
+    } else if (error.status === 429) {
+      return {
+        ...result,
+        status: 'rate_limited',
+        message: 'Rate limited by OpenAI API. Try again later.',
+        error: error.message,
+      };
+    } else {
+      return {
+        ...result,
+        status: 'api_error',
+        message: 'OpenAI API error occurred.',
+        error: error.message,
+      };
+    }
+  }
 }
 
 /**
@@ -322,10 +411,10 @@ async function doctorCommand(provider) {
       console.log(chalk.gray(`Available providers: ollama, openai, anthropic, openrouter\n`));
       process.exit(1);
     } else {
-      // General health check
+      // General health check (basic config check only)
       const results = await Promise.all([
         checkOllama(config),
-        checkOpenAI(config),
+        checkOpenAI(config, false), // Basic check for general overview
         checkAnthropic(config),
         checkOpenRouter(config),
       ]);

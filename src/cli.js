@@ -61,7 +61,7 @@ program
   .description('Check provider status and configuration')
   .argument('[provider]', 'provider to check (e.g., ollama)')
   .action((provider) => {
-    if (provider === '?' || provider === 'help') {
+    if (provider === 'help') {
       showEnhancedHelp('doctor').catch((err) => {
         console.error('Error:', err.message);
         process.exit(1);
@@ -98,7 +98,7 @@ program
   .argument('[type]', 'config type: global or project')
   .argument('[action]', 'action: show or edit (default: show)')
   .action((type, action) => {
-    if (type === '?' || type === 'help') {
+    if (type === 'help') {
       showEnhancedHelp('config').catch((err) => {
         console.error('Error:', err.message);
         process.exit(1);
@@ -142,15 +142,6 @@ program
   });
 
 // Enhanced help commands
-program
-  .command('?')
-  .description('Show enhanced help with colors and live status')
-  .action(() => {
-    showEnhancedHelp().catch((err) => {
-      console.error('Error:', err.message);
-      process.exit(1);
-    });
-  });
 
 program
   .command('help')
