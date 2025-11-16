@@ -16,6 +16,10 @@ coverage/
 *.swp
 *.swo
 *~
+.eslintrc.js
+.prettierrc
+.prettierignore
+jest.config.js
 
 # Project specific (user-generated)
 .code-reviews/

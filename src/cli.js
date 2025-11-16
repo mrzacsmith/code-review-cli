@@ -11,11 +11,35 @@ const {
 } = require('./commands/prompt');
 
 const program = new Command();
+const packageJson = require('../package.json');
+
+// Get npm package URL from package.json
+function getNpmPackageUrl() {
+  // Check if repository field exists
+  if (packageJson.repository && typeof packageJson.repository === 'string') {
+    // If it's a GitHub URL, convert to npmjs.com
+    const match = packageJson.repository.match(/github\.com[\/:]([^\/]+)\/([^\/\.]+)/);
+    if (match) {
+      return `https://www.npmjs.com/package/${packageJson.name}`;
+    }
+  }
+  // Fallback to npmjs.com URL based on package name
+  return `https://www.npmjs.com/package/${packageJson.name}`;
+}
+
+// Create clickable terminal hyperlink (OSC 8 escape sequence)
+// This makes URLs clickable in terminals that support it (iTerm2, VS Code, Windows Terminal, etc.)
+function createClickableLink(url, text = url) {
+  // OSC 8 escape sequence for hyperlinks: \x1b]8;;URL\x1b\\TEXT\x1b]8;;\x1b\\
+  // Falls back to plain URL if terminal doesn't support hyperlinks
+  return `\x1b]8;;${url}\x1b\\${text}\x1b]8;;\x1b\\`;
+}
 
 program
   .name('crc')
   .description('Code Review CLI - AI-powered code review of git commits')
-  .version('0.1.0');
+  .version('0.1.0')
+  .addHelpText('after', `\n📦 Documentation: ${createClickableLink(getNpmPackageUrl())}\n`);
 
 program
   .command('init')
