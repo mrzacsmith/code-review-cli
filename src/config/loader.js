@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+const os = require('os');
 const yaml = require('js-yaml');
 const { configSchema } = require('./schema');
 
@@ -33,16 +34,86 @@ function resolveEnvVars(obj) {
 }
 
 /**
+ * Get global config file path
+ */
+function getGlobalConfigPath() {
+  const homeDir = os.homedir();
+  return path.join(homeDir, '.code-review-cli', 'config.yaml');
+}
+
+/**
+ * Load global config (if exists)
+ */
+async function loadGlobalConfig() {
+  const globalPath = getGlobalConfigPath();
+  try {
+    const content = await fs.readFile(globalPath, 'utf8');
+    const rawConfig = yaml.load(content);
+    // Don't resolve env vars in global config - allow direct API keys
+    return rawConfig;
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return null; // Global config is optional
+    }
+    throw err;
+  }
+}
+
+/**
+ * Deep merge two objects (project config overrides global)
+ */
+function mergeConfigs(global, project) {
+  if (!global) return project;
+  if (!project) return global;
+
+  const merged = { ...global };
+
+  // Merge providers
+  if (project.providers) {
+    merged.providers = { ...global.providers, ...project.providers };
+    // For each provider, merge settings (project overrides global)
+    for (const [name, providerConfig] of Object.entries(project.providers)) {
+      if (merged.providers[name]) {
+        merged.providers[name] = { ...merged.providers[name], ...providerConfig };
+      } else {
+        merged.providers[name] = providerConfig;
+      }
+    }
+  }
+
+  // Merge other top-level settings (project overrides global)
+  if (project.output) {
+    merged.output = { ...global.output, ...project.output };
+  }
+  if (project.rules_file !== undefined) {
+    merged.rules_file = project.rules_file;
+  }
+  if (project.dependency_depth !== undefined) {
+    merged.dependency_depth = project.dependency_depth;
+  }
+
+  return merged;
+}
+
+/**
  * Load and validate configuration file
+ * Merges global config with project config (project takes precedence)
  */
 async function loadConfig(configPath = '.code-review.config') {
   try {
+    // Load global config first
+    const globalConfig = await loadGlobalConfig();
+
+    // Load project config
     const fullPath = path.resolve(configPath);
     const content = await fs.readFile(fullPath, 'utf8');
-    const rawConfig = yaml.load(content);
+    const rawProjectConfig = yaml.load(content);
 
-    // Resolve environment variables
-    const config = resolveEnvVars(rawConfig);
+    // Merge configs (project overrides global)
+    const mergedRaw = mergeConfigs(globalConfig, rawProjectConfig);
+
+    // Resolve environment variables (only for env: references)
+    const config = resolveEnvVars(mergedRaw);
 
     // Validate schema
     const { error, value } = configSchema.validate(config, {
@@ -87,5 +158,7 @@ module.exports = {
   loadConfig,
   getEnabledProviders,
   resolveEnvVars,
+  getGlobalConfigPath,
+  loadGlobalConfig,
 };
 

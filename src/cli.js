@@ -1,6 +1,7 @@
 const { Command } = require('commander');
 const { initCommand } = require('./commands/init');
 const { fastScanCommand } = require('./commands/fastScan');
+const { setupGlobalCommand } = require('./commands/setupGlobal');
 
 const program = new Command();
 
@@ -13,6 +14,11 @@ program
   .command('init')
   .description('Initialize code review configuration')
   .action(initCommand);
+
+program
+  .command('setup-global')
+  .description('Set up global configuration file for API keys')
+  .action(setupGlobalCommand);
 
 program
   .command('summarize')
