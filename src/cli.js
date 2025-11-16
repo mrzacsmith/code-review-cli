@@ -14,6 +14,7 @@ const {
 
 const program = new Command();
 const packageJson = require('../package.json');
+const packageVersion = packageJson.version;
 
 // Get npm package URL from package.json
 function getNpmPackageUrl() {
@@ -40,7 +41,7 @@ function createClickableLink(url, text = url) {
 program
   .name('crc')
   .description('Code Review CLI - AI-powered code review of git commits')
-  .version('0.1.0')
+  .version(packageVersion)
   .addHelpText('after', `\n📦 Documentation: ${createClickableLink(getNpmPackageUrl())}\n`);
 
 program
