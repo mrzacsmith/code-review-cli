@@ -48,8 +48,22 @@ crc
   - Useful for sharing API keys across multiple projects
   - API keys are stored in environment variable format: `env:API_KEY_NAME`
 
-- **`crc config <global|project>`** - Manage configuration (coming soon)
+- **`crc config <global|project>`** - Manage configuration
   - View or edit global or project configuration files
+  - Default action is `show` to display the config
+  - Use `edit` action to modify the configuration
+
+**Actions:**
+- `show` - Show configuration file (default)
+- `edit` - Edit configuration file in your default editor
+
+**Examples:**
+```bash
+crc config global        # Show global config
+crc config project       # Show project config
+crc config global edit    # Edit global config
+crc config project edit   # Edit project config
+```
 
 ### Prompt Management
 
