@@ -1,8 +1,7 @@
 const { OllamaProvider } = require('./ollama');
 const { OpenAIProvider } = require('./openai');
-// Future providers will be added here
-// const { OpenRouterProvider } = require('./openrouter');
-// const { AnthropicProvider } = require('./anthropic');
+const { OpenRouterProvider } = require('./openrouter');
+const { AnthropicProvider } = require('./anthropic');
 
 /**
  * Create provider instance from config
@@ -15,10 +14,10 @@ function createProvider(providerConfig) {
       return new OllamaProvider({ name, ...config });
     case 'openai':
       return new OpenAIProvider({ name, ...config });
-    // case 'openrouter':
-    //   return new OpenRouterProvider({ name, ...config });
-    // case 'anthropic':
-    //   return new AnthropicProvider({ name, ...config });
+    case 'openrouter':
+      return new OpenRouterProvider({ name, ...config });
+    case 'anthropic':
+      return new AnthropicProvider({ name, ...config });
     default:
       throw new Error(`Unknown provider: ${name}`);
   }
@@ -52,5 +51,8 @@ module.exports = {
   createProvider,
   createProviders,
   OllamaProvider,
+  OpenAIProvider,
+  OpenRouterProvider,
+  AnthropicProvider,
 };
 
