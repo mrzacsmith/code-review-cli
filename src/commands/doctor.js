@@ -259,11 +259,20 @@ async function checkAnthropic(config, testConnection = false) {
     
     // Anthropic doesn't have a models list endpoint, so we'll test with known models
     const knownAnthropicModels = [
-      'claude-3-5-sonnet-20241022',
+      // Claude 4.x family (2025)
+      'claude-sonnet-4-5',
+      'claude-sonnet-4-5-20250929',
+      'claude-haiku-4-5',
+      'claude-haiku-4-5-20251001',
+      'claude-opus-4-1',
+      'claude-opus-4-1-20250805',
+      // Claude 3.x family (2024)
       'claude-3-5-sonnet-20240620',
+      'claude-3-5-haiku-20241022',
       'claude-3-opus-20240229',
       'claude-3-sonnet-20240229',
       'claude-3-haiku-20240307',
+      // Legacy models
       'claude-2.1',
       'claude-2.0',
       'claude-instant-1.2'
