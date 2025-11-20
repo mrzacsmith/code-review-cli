@@ -99,6 +99,7 @@ async function displayMainHelp() {
   console.log(createSectionHeader('🔧', 'Management Commands'));
   console.log(`  ${chalk.green('crc config')}              Manage configuration`);
   console.log(`  ${chalk.green('crc prompt')}              Manage review prompts`);
+  console.log(`  ${chalk.green('crc show <provider>')}     Show available models`);
   console.log(`  ${chalk.green('crc clear')}               Remove all reports`);
   console.log();
   

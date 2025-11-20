@@ -6,6 +6,7 @@ const { clearCommand } = require('./commands/clear');
 const { configCommand } = require('./commands/config');
 const { ignoreCommand } = require('./commands/ignore');
 const { doctorCommand } = require('./commands/doctor');
+const { showCommand } = require('./commands/show');
 const {
   showPromptCommand,
   editPromptCommand,
@@ -72,6 +73,17 @@ program
         process.exit(1);
       });
     }
+  });
+
+program
+  .command('show')
+  .description('Show available models for a provider')
+  .argument('<provider>', 'provider to show (anthropic, openai, openrouter, ollama)')
+  .action((provider) => {
+    showCommand(provider).catch((err) => {
+      console.error('Error:', err.message);
+      process.exit(1);
+    });
   });
 
 program
@@ -183,7 +195,7 @@ program
     // If a command was provided but not recognized, show error
     if (hasCommand && !options.clean && !options.deep && !options.fast && !options.commits && !options.n && !options.branch && !options.since) {
       const command = args.find((arg) => !arg.startsWith('--'));
-      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear', 'ignore', 'doctor'].includes(command)) {
+      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear', 'ignore', 'doctor', 'show'].includes(command)) {
         console.error(`\n✗ Unknown command: ${command}`);
         console.error(`\nRun 'crc --help' to see available commands.\n`);
         process.exit(1);
