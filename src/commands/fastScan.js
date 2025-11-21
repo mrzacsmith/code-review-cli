@@ -40,13 +40,25 @@ async function fastScanCommand(options = {}) {
   
   // Display command header
   let headerAction = 'Fast Scan';
+
+  // Determine scan type based on depth
+  if (deep) {
+    headerAction = 'Deep Scan';
+  } else if (depth !== undefined) {
+    headerAction = `Custom Scan (depth ${depth})`;
+  }
+
+  // Override with specific review types
   if (branchName !== undefined) {
     const targetBranch = branchName || 'current branch';
-    headerAction = `Branch Review (${targetBranch})`;
+    const scanMode = deep ? 'Deep' : depth !== undefined ? `Depth ${depth}` : 'Standard';
+    headerAction = `Branch Review - ${scanMode} (${targetBranch})`;
   } else if (sinceBranch) {
-    headerAction = `Since Branch (${sinceBranch})`;
+    const scanMode = deep ? 'Deep' : depth !== undefined ? `Depth ${depth}` : 'Standard';
+    headerAction = `Since Branch - ${scanMode} (${sinceBranch})`;
   } else if (commitCount && commitCount > 1) {
-    headerAction = `Multi-Commit Review (${commitCount})`;
+    const scanMode = deep ? 'Deep' : depth !== undefined ? `Depth ${depth}` : 'Standard';
+    headerAction = `Multi-Commit Review - ${scanMode} (${commitCount})`;
   }
   
   displayCommandHeader({ action: headerAction });
