@@ -10,6 +10,7 @@ class OpenRouterProvider extends BaseProvider {
     this.apiKey = config.api_key;
     this.baseUrl = 'https://openrouter.ai/api/v1';
     this.timeout = 60000; // 1 minute
+    this.maxTokens = config.max_tokens || 3000;
   }
 
   /**
@@ -41,6 +42,12 @@ class OpenRouterProvider extends BaseProvider {
             '\n\n[Content truncated due to length. Reviewing first portion of changes.]'
           : prompt;
 
+      // Determine which token parameter to use based on model
+      // Extract the actual model name after the provider prefix (e.g., 'openai/gpt-5' -> 'gpt-5')
+      const modelName = model.includes('/') ? model.split('/')[1] : model;
+      const isNewModel = modelName.startsWith('gpt-5') || modelName.startsWith('o1') || modelName.startsWith('o3');
+      const tokenParam = isNewModel ? 'max_completion_tokens' : 'max_tokens';
+
       const response = await this.retry(async () => {
         return await axios.post(
           `${this.baseUrl}/chat/completions`,
@@ -53,7 +60,7 @@ class OpenRouterProvider extends BaseProvider {
               },
             ],
             temperature: 0.7,
-            max_tokens: 3000,
+            [tokenParam]: this.maxTokens,
           },
           {
             headers: {

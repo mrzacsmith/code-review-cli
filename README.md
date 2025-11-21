@@ -261,24 +261,28 @@ providers:
     models:
       - codellama:7b
       - deepseek-coder:latest
+    max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
 
   openai:
     enabled: true
     api_key: env:OPENAI_API_KEY
     models:
       - gpt-4o-mini
+    max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
 
   anthropic:
     enabled: false
     api_key: env:ANTHROPIC_API_KEY
     models:
       - claude-sonnet-4-5
+    max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
 
   openrouter:
     enabled: false
     api_key: env:OPENROUTER_API_KEY
     models:
       - anthropic/claude-sonnet-4
+    max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
 
 output:
   reports_dir: .code-reviews
@@ -291,6 +295,33 @@ dependency_depth: 2
 ### Global Configuration
 
 Global configuration is stored in `~/.code-review-cli/config.yaml` and is merged with project configuration (project settings take precedence).
+
+### Max Tokens Configuration
+
+Control the maximum number of tokens the LLM can generate in its response. This affects review length and API costs.
+
+**Configuration (`max_tokens` per provider):**
+```yaml
+providers:
+  openai:
+    enabled: true
+    api_key: env:OPENAI_API_KEY
+    models:
+      - gpt-4o-mini
+    max_tokens: 3000  # Default: 3000 (range: 1-100000)
+```
+
+**When to adjust:**
+- **Lower values (1000-2000)**: Quick, concise reviews - faster and cheaper
+- **Default (3000)**: Balanced reviews with good detail - **RECOMMENDED**
+- **Higher values (4000-8000)**: Comprehensive, detailed reviews - slower and more expensive
+- **Very high (8000+)**: Extremely detailed analysis - use sparingly for complex changes
+
+**Note:**
+- Different models have different token limits (e.g., GPT-4 supports up to 128k, Claude supports up to 200k)
+- Higher `max_tokens` increases API costs linearly
+- This setting can be configured globally or per-project (project settings take precedence)
+- For GPT-5 and newer models (o1, o3), the system automatically uses `max_completion_tokens` instead of `max_tokens`
 
 ### Dependency Depth Control
 

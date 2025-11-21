@@ -164,10 +164,15 @@ async function checkOpenAI(config, testConnection = false) {
     // Test 3: Small completion test with first valid model
     if (validModels.length > 0) {
       try {
+        const testModel = validModels[0];
+        // Determine which token parameter to use based on model
+        const isNewModel = testModel.startsWith('gpt-5') || testModel.startsWith('o1') || testModel.startsWith('o3');
+        const tokenParam = isNewModel ? 'max_completion_tokens' : 'max_tokens';
+
         await client.chat.completions.create({
-          model: validModels[0],
+          model: testModel,
           messages: [{ role: 'user', content: 'test' }],
-          max_tokens: 5,
+          [tokenParam]: 5,
         });
         result.completionTest = 'passed';
       } catch (completionError) {
@@ -440,12 +445,18 @@ async function checkOpenRouter(config, testConnection = false) {
 
     // Test 3: Small completion test with first valid model or a cheap fallback
     const testModel = validModels.length > 0 ? validModels[0] : 'openai/gpt-4o-mini';
-    
+
     try {
+      // Determine which token parameter to use based on model
+      // Extract the actual model name after the provider prefix (e.g., 'openai/gpt-5' -> 'gpt-5')
+      const modelName = testModel.includes('/') ? testModel.split('/')[1] : testModel;
+      const isNewModel = modelName.startsWith('gpt-5') || modelName.startsWith('o1') || modelName.startsWith('o3');
+      const tokenParam = isNewModel ? 'max_completion_tokens' : 'max_tokens';
+
       await axios.post('https://openrouter.ai/api/v1/chat/completions', {
         model: testModel,
         messages: [{ role: 'user', content: 'test' }],
-        max_tokens: 5
+        [tokenParam]: 5
       }, {
         headers: {
           'Authorization': `Bearer ${resolvedApiKey}`,
@@ -455,7 +466,7 @@ async function checkOpenRouter(config, testConnection = false) {
         },
         timeout: 15000 // OpenRouter can be slower
       });
-      
+
       result.completionTest = 'passed';
       result.testedModel = testModel;
     } catch (completionError) {

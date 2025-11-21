@@ -9,6 +9,7 @@ class AnthropicProvider extends BaseProvider {
     super(config);
     this.apiKey = config.api_key;
     this.timeout = 60000; // 1 minute
+    this.maxTokens = config.max_tokens || 3000;
   }
 
   /**
@@ -48,7 +49,7 @@ class AnthropicProvider extends BaseProvider {
       const response = await this.retry(async () => {
         return await client.messages.create({
           model,
-          max_tokens: 3000,
+          max_tokens: this.maxTokens,
           messages: [
             {
               role: 'user',

@@ -9,6 +9,7 @@ class OpenAIProvider extends BaseProvider {
     super(config);
     this.apiKey = config.api_key;
     this.timeout = 60000; // 1 minute
+    this.maxTokens = config.max_tokens || 3000;
   }
 
   /**
@@ -46,6 +47,11 @@ class OpenAIProvider extends BaseProvider {
             '\n\n[Content truncated due to length. Reviewing first portion of changes.]'
           : prompt;
 
+      // Determine which token parameter to use based on model
+      // GPT-5 and newer models (o1, o3) use max_completion_tokens instead of max_tokens
+      const isNewModel = model.startsWith('gpt-5') || model.startsWith('o1') || model.startsWith('o3');
+      const tokenParam = isNewModel ? 'max_completion_tokens' : 'max_tokens';
+
       const response = await this.retry(async () => {
         return await client.chat.completions.create({
           model,
@@ -56,7 +62,7 @@ class OpenAIProvider extends BaseProvider {
             },
           ],
           temperature: 0.7,
-          max_tokens: 3000, // Reduced to ensure we stay under limit
+          [tokenParam]: this.maxTokens,
         });
       });
 

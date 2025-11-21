@@ -5,24 +5,28 @@ const DEFAULT_CONFIG = `providers:
     models:
       - codellama
       - deepseek-coder
+    # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
 
   openrouter:
     enabled: false
     api_key: env:OPENROUTER_API_KEY
     models:
       - anthropic/claude-sonnet-4
+    # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
 
   openai:
     enabled: false
     api_key: env:OPENAI_API_KEY
     models:
       - gpt-4o-mini
+    # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
 
   anthropic:
     enabled: false
     api_key: env:ANTHROPIC_API_KEY
     models:
       - claude-sonnet-4-5
+    # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
 
 output:
   reports_dir: .code-reviews

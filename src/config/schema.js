@@ -5,6 +5,7 @@ const providerSchema = Joi.object({
   api_key: Joi.string().optional(),
   base_url: Joi.string().uri().optional(),
   models: Joi.array().items(Joi.string()).min(1).optional(),
+  max_tokens: Joi.number().integer().min(1).max(100000).optional().default(3000),
 });
 
 const outputSchema = Joi.object({
