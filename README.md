@@ -2,17 +2,18 @@
 
 CLI tool for AI-powered code review of git commits using multiple LLM providers (Ollama, OpenRouter, OpenAI, Anthropic).
 
-## ✨ Key Features
+## Key Features
 
-- 🚀 **Beautiful Terminal Headers** - Clear visual separation with colorful headers showing command context, version, and timing
-- ❓ **Enhanced Help System** - Discoverable help with `crc help`, context-aware guidance, and live status display
-- 🔄 **Multi-Commit Reviews** - Review last N commits (`crc --commits 3`) or branch comparisons (`crc --branch`)
-- 🌳 **Smart Branch Detection** - Auto-detects base branch (main/master/develop) or specify with `--base`
-- 🔍 **Model Discovery** - Browse available models with `crc show <provider>` for easy configuration
-- 🤖 **Multiple LLM Providers** - Support for Ollama (local), OpenAI, Anthropic, and OpenRouter
-- ⚡ **Fast & Efficient** - Smart diff analysis focusing only on changed files
-- 📊 **Detailed Reports** - Markdown reports with comprehensive analysis and suggestions
-- 🎯 **Context-Aware** - Understands your project structure and provides relevant feedback
+- **Terminal Headers** - Clear visual separation with colorful headers showing command context, version, and timing
+- **Enhanced Help System** - Discoverable help with `crc help`, context-aware guidance, and live status display
+- **Multi-Commit Reviews** - Review last N commits (`crc --commits 3`) or branch comparisons (`crc --branch`)
+- **Smart Branch Detection** - Auto-detects base branch (main/master/develop) or specify with `--base`
+- **Model Discovery** - Browse available models with `crc show <provider>` for easy configuration
+- **Multiple LLM Providers** - Support for Ollama (local), OpenAI, Anthropic, and OpenRouter
+- **Automatic Update Notifications** - Get notified when new versions are available with colorful alerts
+- **Fast & Efficient** - Smart diff analysis focusing only on changed files
+- **Detailed Reports** - Markdown reports with comprehensive analysis and suggestions
+- **Context-Aware** - Understands your project structure and provides relevant feedback
 
 ## Installation
 
