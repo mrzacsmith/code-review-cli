@@ -169,11 +169,13 @@ program
 program
   .allowUnknownOption(false)
   .option('--fast', 'Fast scan (default)')
-  .option('--deep', 'Deep scan with transitive dependencies')
+  .option('--deep', 'Deep scan with unlimited dependency depth')
+  .option('--depth <n>', 'Set dependency depth (1-5)', parseInt)
   .option('--clean', 'Clean report directory')
   .option('--commits <n>', 'Review last N commits (1-5)', parseInt)
   .option('-n <n>', 'Short alias for --commits', parseInt)
-  .option('--branch [name]', 'Review branch vs main (current branch if no name provided)')
+  .option('--branch [name]', 'Review branch vs base (current branch if no name provided)')
+  .option('--base <branch>', 'Base branch for comparison (default: auto-detected)')
   .option('--since <branch>', 'Review commits since branching from specified branch')
   .option('-h, --help', 'Show enhanced help with colors and live status')
   .action((options) => {
@@ -204,9 +206,10 @@ program
     
     // Handle commit count options (-n takes precedence over --commits)
     const commitCount = options.n || options.commits;
-    
+
     // Handle branch options
     const branchName = options.branch;
+    const baseBranch = options.base;
     const sinceBranch = options.since;
     
     // Validate that only one review type is specified
@@ -225,20 +228,38 @@ program
         process.exit(1);
       }
     }
-    
+
+    // Validate depth if provided
+    if (options.depth !== undefined) {
+      if (!Number.isInteger(options.depth) || options.depth < 1 || options.depth > 5) {
+        console.error('\n✗ Dependency depth must be an integer between 1 and 5');
+        console.error('Examples: crc --depth 1, crc --depth 3\n');
+        console.error('Use --deep for unlimited depth\n');
+        process.exit(1);
+      }
+    }
+
+    // Cannot combine --deep and --depth
+    if (options.deep && options.depth !== undefined) {
+      console.error('\n✗ Cannot combine --deep and --depth options');
+      console.error('Use either --deep (unlimited) or --depth <n> (1-5)\n');
+      process.exit(1);
+    }
+
     // Run default action only if no command was provided
     if (options.clean) {
       console.log('Clean command - coming soon');
-    } else if (options.deep) {
-      console.log('Deep scan - coming soon');
     } else {
       // Default to fast scan (with optional parameters)
       const scanOptions = {
         commitCount,
         branchName,
+        baseBranch,
         sinceBranch,
+        deep: options.deep,
+        depth: options.depth,
       };
-      
+
       fastScanCommand(scanOptions).catch((err) => {
         console.error('Error:', err.message);
         process.exit(1);

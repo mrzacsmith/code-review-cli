@@ -7,6 +7,8 @@ CLI tool for AI-powered code review of git commits using multiple LLM providers 
 - 🚀 **Beautiful Terminal Headers** - Clear visual separation with colorful headers showing command context, version, and timing
 - ❓ **Enhanced Help System** - Discoverable help with `crc help`, context-aware guidance, and live status display
 - 🔄 **Multi-Commit Reviews** - Review last N commits (`crc --commits 3`) or branch comparisons (`crc --branch`)
+- 🌳 **Smart Branch Detection** - Auto-detects base branch (main/master/develop) or specify with `--base`
+- 🔍 **Model Discovery** - Browse available models with `crc show <provider>` for easy configuration
 - 🤖 **Multiple LLM Providers** - Support for Ollama (local), OpenAI, Anthropic, and OpenRouter
 - ⚡ **Fast & Efficient** - Smart diff analysis focusing only on changed files
 - 📊 **Detailed Reports** - Markdown reports with comprehensive analysis and suggestions
@@ -52,13 +54,19 @@ crc doctor ollama
 
 5. Review your code:
 ```bash
-crc                       # Review latest commit
+crc                       # Review latest commit (depth 2 from config)
 crc --commits 3           # Review last 3 commits
 crc -n 2                  # Review last 2 commits
-crc --branch              # Review current branch vs main
-crc --branch feature/auth # Review specific branch vs main
+crc --branch              # Review current branch vs auto-detected base
+crc --branch feature/auth # Review specific branch vs auto-detected base
+crc --branch --base develop        # Review current branch vs develop
+crc --branch feature/x --base main # Review feature/x vs main
 crc --since main          # Review commits since branching from main
+crc --depth 1             # Fast review (direct dependencies only)
+crc --deep                # ⚠️ Comprehensive review (6-18× more expensive!)
 ```
+
+**Note:** `--deep` scans ALL dependencies (unlimited depth) and can be significantly more expensive. Use the default (depth 2) for most reviews.
 
 6. Get help anytime:
 ```bash
@@ -71,27 +79,45 @@ crc config help           # Context-aware help for config command
 
 ### Review Commands
 
-- **`crc`** or **`crc --fast`** - Fast scan of latest commit (default)
-  - Reviews only changed files and their direct dependencies
+- **`crc`** or **`crc --fast`** - Review latest commit (default)
+  - Reviews changed files plus dependencies up to configured depth (default: 2)
   - Fast and efficient for quick feedback
+  - Uses `dependency_depth` from config (default: 2 levels)
 
 - **`crc --commits N`** or **`crc -n N`** - Review last N commits (1-5)
   - Reviews combined changes from the last N commits
   - Uses efficient combined diff approach
   - Examples: `crc --commits 3`, `crc -n 2`
 
-- **`crc --branch [name]`** - Review branch vs main
-  - Reviews all commits on branch that aren't in main
+- **`crc --branch [name]`** - Review branch vs base
+  - Reviews all commits on branch that aren't in base branch
+  - Auto-detects base branch (main, master, or develop)
   - Uses current branch if no name provided
   - Examples: `crc --branch`, `crc --branch feature/auth`
+  - Use with `--base` to specify custom base branch
+
+- **`crc --base <branch>`** - Specify base branch for comparison
+  - Use with `--branch` to compare against custom base
+  - Auto-detection tries: remote HEAD → main → master → develop
+  - Examples: `crc --branch --base develop`, `crc --branch feature/x --base master`
 
 - **`crc --since <branch>`** - Review commits since branching
-  - Reviews all commits since branching from specified branch
-  - Example: `crc --since main`
+  - Reviews all commits on current branch since branching from specified branch
+  - Always reviews current branch (unlike `--branch` which can target any branch)
+  - Examples: `crc --since main`, `crc --since develop`
+  - **Note:** `crc --since X` is equivalent to `crc --branch --base X` when reviewing current branch
 
-- **`crc --deep`** - Deep scan with transitive dependencies
-  - Reviews changed files and all transitive dependencies
-  - More comprehensive but slower (coming soon)
+- **`crc --depth <n>`** - Custom dependency depth (1-5)
+  - Override config to set specific dependency depth
+  - Examples: `crc --depth 1` (direct only), `crc --depth 3` (3 levels)
+  - Useful for controlling speed vs thoroughness tradeoff
+  - ⚠️ **Higher depths = more LLM tokens = higher cost**
+
+- **`crc --deep`** - Deep scan with unlimited dependencies
+  - Reviews changed files and ALL transitive dependencies
+  - More comprehensive but slower and more expensive
+  - ⚠️ **WARNING: Can be 6-18× more expensive than default (depth 2)**
+  - Use sparingly for critical changes, security reviews, or releases only
 
 ### Help Commands
 
@@ -151,6 +177,15 @@ crc config help           # Context-aware help for config command
   - Validates configured models exist
   - Tests completion functionality with gpt-4o-mini fallback
   - Shows detailed error information including credit status
+
+- **`crc show <provider>`** - Show available models for a provider
+  - Lists all available models for the specified provider
+  - Shows which models are currently configured
+  - Displays configuration status and API key status
+  - Fetches live model lists from APIs (OpenAI, OpenRouter)
+  - Shows locally installed models (Ollama)
+  - Providers: `anthropic`, `openai`, `openrouter`, `ollama`
+  - Examples: `crc show anthropic`, `crc show openai`
 
 - **`crc setup-global`** - Set up global configuration file for API keys
   - Creates `~/.code-review-cli/config.yaml` for storing API keys
@@ -257,6 +292,37 @@ dependency_depth: 2
 
 Global configuration is stored in `~/.code-review-cli/config.yaml` and is merged with project configuration (project settings take precedence).
 
+### Dependency Depth Control
+
+Control how many levels of dependencies are analyzed during code review:
+
+**Configuration (`dependency_depth` in `.code-review.config`):**
+```yaml
+dependency_depth: 2  # Default: 2 levels (1-5)
+```
+
+**CLI Override:**
+```bash
+crc --depth 1    # Fast: direct dependencies only
+crc              # Default: uses config (depth 2)
+crc --depth 3    # Moderate: 3 levels of dependencies
+crc --deep       # Comprehensive: unlimited depth
+```
+
+**When to use:**
+- `--depth 1`: Quick daily commit reviews (~150 files, fast, low cost)
+- Default (depth 2): Standard feature reviews (~450 files, balanced) - **RECOMMENDED**
+- `--depth 3-5`: Complex changes with interactions (~1000+ files, thorough, **2-5× more expensive**)
+- `--deep`: Critical security/release reviews (thousands of files, **6-18× more expensive**)
+
+**⚠️ COST WARNING:** Deeper scans process more files and use significantly more LLM tokens:
+- Depth 1: ~$0.05 per review (150 files)
+- Depth 2: ~$0.14 per review (450 files) ← Default
+- Depth 3: ~$0.30 per review (1,000 files)
+- `--deep`: ~$0.90+ per review (3,000+ files)
+
+Use `--deep` sparingly - it can cost 6-18× more than the default!
+
 ### Environment Variables
 
 Set API keys as environment variables:
@@ -310,13 +376,58 @@ Each report includes:
 - Git repository
 - At least one enabled LLM provider
 
+## Troubleshooting
+
+### Branch Review Issues
+
+**Error: "No commits found on 'X' that are not in 'Y'"**
+
+This means the branches are identical (no new commits to review). Common causes:
+- You're on the same branch as the base branch (e.g., `crc --since main` while on `main`)
+- Your feature branch is fully merged into the base branch
+- Your branch is behind the base branch (no new commits)
+
+**Solution:** Check that you're on a feature branch with commits not in the base branch.
+
+**Error: "Branch 'X' does not exist"**
+
+The specified branch name doesn't exist in your repository.
+
+**Solutions:**
+- Check branch name spelling: `git branch -a`
+- Fetch from remote if needed: `git fetch`
+- For `--branch` without `--base`, ensure your repo has one of: `main`, `master`, or `develop`
+
+### Understanding `--branch` vs `--since`
+
+Both flags review branch differences, but with different defaults:
+
+**Use `--since` when:**
+- Always reviewing current branch
+- Want to specify base branch explicitly
+- Mental model: "show me changes since I branched from main"
+
+```bash
+crc --since main       # Current branch vs main
+crc --since develop    # Current branch vs develop
+```
+
+**Use `--branch` when:**
+- Want to review a specific branch (not current)
+- Want automatic base branch detection
+- Mental model: "review this feature branch"
+
+```bash
+crc --branch feature/auth              # feature/auth vs auto-detected base
+crc --branch feature/auth --base main  # feature/auth vs main
+crc --branch                           # Current branch vs auto-detected base
+```
+
+**Note:** `crc --since X` is equivalent to `crc --branch --base X` when on current branch.
+
 ## Coming Soon
 
 The following features are planned for future releases:
-
-- **`crc --deep`** - Deep scan with transitive dependencies
-  - Reviews changed files and all transitive dependencies
-  - More comprehensive analysis but slower execution
 
 - **`crc summarize`** - Generate codebase summary
   - Creates a summary of the entire codebase for context

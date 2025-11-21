@@ -1,7 +1,7 @@
 # Code Review CLI - Feature Tasks & Research
 
 ## Task 1: Add `crc show <provider>` Command
-**Status:** Pending
+**Status:** ✅ COMPLETED
 **Priority:** High
 **Type:** Feature
 
@@ -117,9 +117,9 @@ The `crc --branch` flag exists but needs verification and potential fixes.
 ---
 
 ## Task 4: Fix `--since` Flag
-**Status:** Pending
+**Status:** ✅ COMPLETED (No fixes needed - working correctly)
 **Priority:** High
-**Type:** Bug Fix
+**Type:** Bug Fix / Documentation
 
 ### Description
 The `--since` flag exists but may not be working correctly. Need to diagnose and fix.
@@ -159,7 +159,7 @@ The `--since` flag exists but may not be working correctly. Need to diagnose and
 ---
 
 ## Task 5: Research & Document `--deep` Flag
-**Status:** Research
+**Status:** ✅ COMPLETED (Research document created)
 **Priority:** Medium
 **Type:** Research + Documentation
 
@@ -259,11 +259,11 @@ Write a detailed research document explaining:
 
 | Task | Priority | Type | Status |
 |------|----------|------|--------|
-| 1. `crc show <provider>` | High | Feature | Pending |
-| 2. Dynamic Model Toggle | Medium | Research + Feature | Research |
-| 3. Git Branch Review | High | Bug Fix/Enhancement | Pending |
-| 4. Fix `--since` Flag | High | Bug Fix | Pending |
-| 5. Research `--deep` Flag | Medium | Research | Research |
+| 1. `crc show <provider>` | High | Feature | ✅ COMPLETED |
+| 2. Dynamic Model Toggle | Medium | Research + Feature | ✅ COMPLETED (Research) |
+| 3. Git Branch Review | High | Bug Fix/Enhancement | ✅ COMPLETED |
+| 4. Fix `--since` Flag | High | Bug Fix | ✅ COMPLETED |
+| 5. Research `--deep` Flag | Medium | Research | ✅ COMPLETED |
 
 ---
 

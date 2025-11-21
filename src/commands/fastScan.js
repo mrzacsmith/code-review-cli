@@ -1,13 +1,14 @@
-const { 
-  getChangedFiles, 
-  getLatestCommitDiff, 
-  getLastNChangedFiles, 
-  getLastNCommitsDiff, 
+const {
+  getChangedFiles,
+  getLatestCommitDiff,
+  getLastNChangedFiles,
+  getLastNCommitsDiff,
   getBranchChangedFiles,
   getBranchDiff,
   getChangedFilesSince,
   getCommitsSince,
-  hasUncommittedChanges 
+  getDefaultBranch,
+  hasUncommittedChanges
 } = require('../git');
 const { loadRulesFromConfig } = require('../rules');
 const { loadFiles } = require('../files');
@@ -35,7 +36,7 @@ async function fastScanCommand(options = {}) {
     options = { commitCount: options };
   }
   
-  const { commitCount, branchName, sinceBranch } = options;
+  const { commitCount, branchName, baseBranch, sinceBranch, deep, depth } = options;
   
   // Display command header
   let headerAction = 'Fast Scan';
@@ -86,10 +87,12 @@ async function fastScanCommand(options = {}) {
     
     if (branchName !== undefined) {
       // Branch comparison review
+      // Auto-detect base branch if not provided
+      const actualBaseBranch = baseBranch || await getDefaultBranch();
       const targetBranch = branchName || 'current branch';
-      spinner.text = `Analyzing branch '${targetBranch}' vs main...`;
-      changedFilesData = await getBranchChangedFiles(branchName);
-      diffData = await getBranchDiff(branchName);
+      spinner.text = `Analyzing branch '${targetBranch}' vs ${actualBaseBranch}...`;
+      changedFilesData = await getBranchChangedFiles(branchName, actualBaseBranch);
+      diffData = await getBranchDiff(branchName, actualBaseBranch);
       scanType = branchName ? `branch-${branchName}` : 'branch-current';
     } else if (sinceBranch) {
       // Since branch review
@@ -120,9 +123,20 @@ async function fastScanCommand(options = {}) {
     const filePaths = changedFilesData.files.map((f) => f.path);
     const filesResult = await loadFiles(filePaths);
 
+    // Determine dependency depth
+    let maxDepth;
+    if (deep) {
+      maxDepth = Infinity; // Unlimited depth for --deep
+    } else if (depth !== undefined) {
+      maxDepth = depth; // User-specified depth
+    } else {
+      maxDepth = config.dependency_depth || 2; // Config default
+    }
+
     // Get dependencies
-    spinner.text = 'Analyzing dependencies...';
-    const dependencyPaths = await getDependencies(filePaths);
+    const depthText = maxDepth === Infinity ? 'unlimited depth' : `depth ${maxDepth}`;
+    spinner.text = `Analyzing dependencies (${depthText})...`;
+    const dependencyPaths = await getDependencies(filePaths, maxDepth);
     const dependenciesResult = await loadFiles(dependencyPaths);
 
     // Build context and prompt

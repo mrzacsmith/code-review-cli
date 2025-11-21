@@ -240,17 +240,55 @@ async function getCurrentBranch() {
  */
 async function branchExists(branchName) {
   const git = getGit();
-  
+
   try {
     const branches = await git.branch(['-a']);
     // Check local and remote branches
-    return branches.all.some(branch => 
-      branch === branchName || 
+    return branches.all.some(branch =>
+      branch === branchName ||
       branch === `origin/${branchName}` ||
       branch.endsWith(`/${branchName}`)
     );
   } catch (err) {
     return false;
+  }
+}
+
+/**
+ * Get the default/base branch for the repository
+ * Auto-detects from remote HEAD or falls back to common branch names
+ */
+async function getDefaultBranch() {
+  const git = getGit();
+
+  try {
+    // Try to get remote's default branch from symbolic-ref
+    try {
+      const remote = await git.raw(['symbolic-ref', 'refs/remotes/origin/HEAD']);
+      if (remote) {
+        const branchName = remote.replace('refs/remotes/origin/', '').trim();
+        if (branchName && await branchExists(branchName)) {
+          return branchName;
+        }
+      }
+    } catch {
+      // symbolic-ref might fail if remote HEAD not set, continue to fallbacks
+    }
+
+    // Fall back to checking common default branch names
+    const commonDefaults = ['main', 'master', 'develop', 'development'];
+
+    for (const branchName of commonDefaults) {
+      if (await branchExists(branchName)) {
+        return branchName;
+      }
+    }
+
+    // Last resort: return 'main' (will fail later with helpful error)
+    return 'main';
+  } catch (err) {
+    // If all fails, default to 'main'
+    return 'main';
   }
 }
 
@@ -444,6 +482,7 @@ module.exports = {
   getLastNChangedFiles,
   getCurrentBranch,
   branchExists,
+  getDefaultBranch,
   getBranchDiff,
   getBranchChangedFiles,
   getCommitsSince,

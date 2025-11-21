@@ -259,31 +259,43 @@ async function extractDependencies(filePath) {
 }
 
 /**
- * Get all dependencies for a list of files (direct dependencies only)
+ * Get all dependencies for a list of files up to specified depth
+ * @param {string[]} filePaths - Files to analyze
+ * @param {number} maxDepth - Maximum dependency depth (default: 2, Infinity for unlimited)
+ * @returns {Promise<string[]>} Array of dependency file paths
  */
-async function getDependencies(filePaths) {
+async function getDependencies(filePaths, maxDepth = 2) {
   const dependencyMap = new Map();
   const processed = new Set();
 
-  async function processFile(filePath) {
+  async function processFile(filePath, currentDepth) {
+    // Stop if we've reached max depth
+    if (currentDepth >= maxDepth) {
+      return;
+    }
+
+    // Avoid circular dependencies
     if (processed.has(filePath)) {
-      return; // Avoid circular dependencies
+      return;
     }
     processed.add(filePath);
 
     const deps = await extractDependencies(filePath);
     for (const dep of deps) {
       if (dep.resolvedPath && !dependencyMap.has(dep.resolvedPath)) {
-        dependencyMap.set(dep.resolvedPath, dep);
-        // Recursively process dependencies (for direct deps only, so depth 1)
-        await processFile(dep.resolvedPath);
+        dependencyMap.set(dep.resolvedPath, {
+          ...dep,
+          depth: currentDepth + 1,
+        });
+        // Recursively process dependencies
+        await processFile(dep.resolvedPath, currentDepth + 1);
       }
     }
   }
 
-  // Process all input files
+  // Process all input files (starting at depth 0)
   for (const filePath of filePaths) {
-    await processFile(filePath);
+    await processFile(filePath, 0);
   }
 
   return Array.from(dependencyMap.keys());
