@@ -10,6 +10,7 @@ class AnthropicProvider extends BaseProvider {
     this.apiKey = config.api_key;
     this.timeout = 60000; // 1 minute
     this.maxTokens = config.max_tokens || 3000;
+    this.temperature = config.temperature !== undefined ? config.temperature : 0.7;
   }
 
   /**
@@ -56,7 +57,7 @@ class AnthropicProvider extends BaseProvider {
               content: truncatedPrompt,
             },
           ],
-          temperature: 0.7,
+          temperature: this.temperature,
         });
       });
 

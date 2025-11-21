@@ -10,6 +10,7 @@ class OpenAIProvider extends BaseProvider {
     this.apiKey = config.api_key;
     this.timeout = 60000; // 1 minute
     this.maxTokens = config.max_tokens || 3000;
+    this.temperature = config.temperature !== undefined ? config.temperature : 0.7;
   }
 
   /**
@@ -47,23 +48,31 @@ class OpenAIProvider extends BaseProvider {
             '\n\n[Content truncated due to length. Reviewing first portion of changes.]'
           : prompt;
 
-      // Determine which token parameter to use based on model
-      // GPT-5 and newer models (o1, o3) use max_completion_tokens instead of max_tokens
+      // Determine model-specific parameters
+      // GPT-5 and newer models (o1, o3) have special requirements:
+      // - Use max_completion_tokens instead of max_tokens
+      // - Do not support custom temperature (fixed at 1.0)
       const isNewModel = model.startsWith('gpt-5') || model.startsWith('o1') || model.startsWith('o3');
       const tokenParam = isNewModel ? 'max_completion_tokens' : 'max_tokens';
 
+      const requestParams = {
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: truncatedPrompt,
+          },
+        ],
+        [tokenParam]: this.maxTokens,
+      };
+
+      // Only add temperature for models that support it (not GPT-5/o1/o3)
+      if (!isNewModel) {
+        requestParams.temperature = this.temperature;
+      }
+
       const response = await this.retry(async () => {
-        return await client.chat.completions.create({
-          model,
-          messages: [
-            {
-              role: 'user',
-              content: truncatedPrompt,
-            },
-          ],
-          temperature: 0.7,
-          [tokenParam]: this.maxTokens,
-        });
+        return await client.chat.completions.create(requestParams);
       });
 
       const processingTime = Date.now() - startTime;

@@ -6,6 +6,7 @@ const providerSchema = Joi.object({
   base_url: Joi.string().uri().optional(),
   models: Joi.array().items(Joi.string()).min(1).optional(),
   max_tokens: Joi.number().integer().min(1).max(100000).optional().default(3000),
+  temperature: Joi.number().min(0).max(2).optional().default(0.7),
 });
 
 const outputSchema = Joi.object({

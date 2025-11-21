@@ -165,15 +165,22 @@ async function checkOpenAI(config, testConnection = false) {
     if (validModels.length > 0) {
       try {
         const testModel = validModels[0];
-        // Determine which token parameter to use based on model
+        // Determine model-specific parameters
         const isNewModel = testModel.startsWith('gpt-5') || testModel.startsWith('o1') || testModel.startsWith('o3');
         const tokenParam = isNewModel ? 'max_completion_tokens' : 'max_tokens';
 
-        await client.chat.completions.create({
+        const requestParams = {
           model: testModel,
           messages: [{ role: 'user', content: 'test' }],
           [tokenParam]: 5,
-        });
+        };
+
+        // Only add temperature for models that support it (not GPT-5/o1/o3)
+        if (!isNewModel) {
+          requestParams.temperature = 0.7;
+        }
+
+        await client.chat.completions.create(requestParams);
         result.completionTest = 'passed';
       } catch (completionError) {
         result.completionTest = 'failed';
@@ -447,17 +454,24 @@ async function checkOpenRouter(config, testConnection = false) {
     const testModel = validModels.length > 0 ? validModels[0] : 'openai/gpt-4o-mini';
 
     try {
-      // Determine which token parameter to use based on model
+      // Determine model-specific parameters
       // Extract the actual model name after the provider prefix (e.g., 'openai/gpt-5' -> 'gpt-5')
       const modelName = testModel.includes('/') ? testModel.split('/')[1] : testModel;
       const isNewModel = modelName.startsWith('gpt-5') || modelName.startsWith('o1') || modelName.startsWith('o3');
       const tokenParam = isNewModel ? 'max_completion_tokens' : 'max_tokens';
 
-      await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+      const requestBody = {
         model: testModel,
         messages: [{ role: 'user', content: 'test' }],
         [tokenParam]: 5
-      }, {
+      };
+
+      // Only add temperature for models that support it (not GPT-5/o1/o3)
+      if (!isNewModel) {
+        requestBody.temperature = 0.7;
+      }
+
+      await axios.post('https://openrouter.ai/api/v1/chat/completions', requestBody, {
         headers: {
           'Authorization': `Bearer ${resolvedApiKey}`,
           'Content-Type': 'application/json',

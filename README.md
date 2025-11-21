@@ -262,6 +262,7 @@ providers:
       - codellama:7b
       - deepseek-coder:latest
     max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
+    temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7)
 
   openai:
     enabled: true
@@ -269,6 +270,8 @@ providers:
     models:
       - gpt-4o-mini
     max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
+    temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7)
+    # Note: GPT-5, o1, o3 models do not support custom temperature
 
   anthropic:
     enabled: false
@@ -276,6 +279,7 @@ providers:
     models:
       - claude-sonnet-4-5
     max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
+    temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7)
 
   openrouter:
     enabled: false
@@ -283,6 +287,7 @@ providers:
     models:
       - anthropic/claude-sonnet-4
     max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
+    temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7)
 
 output:
   reports_dir: .code-reviews
@@ -322,6 +327,33 @@ providers:
 - Higher `max_tokens` increases API costs linearly
 - This setting can be configured globally or per-project (project settings take precedence)
 - For GPT-5 and newer models (o1, o3), the system automatically uses `max_completion_tokens` instead of `max_tokens`
+
+### Temperature Configuration
+
+Control the randomness/creativity of model responses. Lower values make output more focused and deterministic.
+
+**Configuration (`temperature` per provider):**
+```yaml
+providers:
+  openai:
+    enabled: true
+    api_key: env:OPENAI_API_KEY
+    models:
+      - gpt-4o-mini
+    temperature: 0.7  # Default: 0.7 (range: 0-2)
+```
+
+**When to adjust:**
+- **0.0-0.3**: Very focused, deterministic - good for consistent, factual reviews
+- **0.4-0.7**: Balanced (default) - **RECOMMENDED** for most code reviews
+- **0.8-1.2**: More creative - useful for brainstorming improvements
+- **1.3-2.0**: Very creative - rarely needed for code review
+
+**Important Notes:**
+- **GPT-5, o1, and o3 models do NOT support custom temperature** - they use a fixed temperature of 1.0
+- The system automatically omits the temperature parameter for these models
+- This setting can be configured globally or per-project (project settings take precedence)
+- See `MODEL_COMPATIBILITY.md` for detailed model-specific parameter support
 
 ### Dependency Depth Control
 

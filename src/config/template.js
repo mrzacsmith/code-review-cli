@@ -6,6 +6,7 @@ const DEFAULT_CONFIG = `providers:
       - codellama
       - deepseek-coder
     # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
+    # temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7, higher = more random)
 
   openrouter:
     enabled: false
@@ -13,6 +14,7 @@ const DEFAULT_CONFIG = `providers:
     models:
       - anthropic/claude-sonnet-4
     # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
+    # temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7, higher = more random)
 
   openai:
     enabled: false
@@ -20,6 +22,8 @@ const DEFAULT_CONFIG = `providers:
     models:
       - gpt-4o-mini
     # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
+    # temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7, higher = more random)
+    # Note: GPT-5, o1, and o3 models do not support custom temperature (fixed at 1.0)
 
   anthropic:
     enabled: false
@@ -27,6 +31,7 @@ const DEFAULT_CONFIG = `providers:
     models:
       - claude-sonnet-4-5
     # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
+    # temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7, higher = more random)
 
 output:
   reports_dir: .code-reviews

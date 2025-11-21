@@ -11,6 +11,7 @@ class OpenRouterProvider extends BaseProvider {
     this.baseUrl = 'https://openrouter.ai/api/v1';
     this.timeout = 60000; // 1 minute
     this.maxTokens = config.max_tokens || 3000;
+    this.temperature = config.temperature !== undefined ? config.temperature : 0.7;
   }
 
   /**
@@ -42,26 +43,35 @@ class OpenRouterProvider extends BaseProvider {
             '\n\n[Content truncated due to length. Reviewing first portion of changes.]'
           : prompt;
 
-      // Determine which token parameter to use based on model
+      // Determine model-specific parameters
       // Extract the actual model name after the provider prefix (e.g., 'openai/gpt-5' -> 'gpt-5')
       const modelName = model.includes('/') ? model.split('/')[1] : model;
+      // GPT-5 and newer models (o1, o3) have special requirements:
+      // - Use max_completion_tokens instead of max_tokens
+      // - Do not support custom temperature (fixed at 1.0)
       const isNewModel = modelName.startsWith('gpt-5') || modelName.startsWith('o1') || modelName.startsWith('o3');
       const tokenParam = isNewModel ? 'max_completion_tokens' : 'max_tokens';
+
+      const requestBody = {
+        model,
+        messages: [
+          {
+            role: 'user',
+            content: truncatedPrompt,
+          },
+        ],
+        [tokenParam]: this.maxTokens,
+      };
+
+      // Only add temperature for models that support it (not GPT-5/o1/o3)
+      if (!isNewModel) {
+        requestBody.temperature = this.temperature;
+      }
 
       const response = await this.retry(async () => {
         return await axios.post(
           `${this.baseUrl}/chat/completions`,
-          {
-            model,
-            messages: [
-              {
-                role: 'user',
-                content: truncatedPrompt,
-              },
-            ],
-            temperature: 0.7,
-            [tokenParam]: this.maxTokens,
-          },
+          requestBody,
           {
             headers: {
               'Authorization': `Bearer ${this.apiKey}`,
