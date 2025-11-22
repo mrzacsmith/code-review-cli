@@ -197,18 +197,24 @@ crc config help           # Context-aware help for config command
   - View or edit global or project configuration files
   - Default action is `show` to display the config
   - Use `edit` action to modify the configuration
+  - Use `upgrade` action to add new config options from latest version
 
 **Actions:**
 - `show` - Show configuration file (default)
 - `edit` - Edit configuration file in your default editor
+- `upgrade` - Upgrade config with new options (preserves your settings)
 
 **Examples:**
 ```bash
-crc config global        # Show global config
-crc config project       # Show project config
+crc config global         # Show global config
+crc config project        # Show project config
 crc config global edit    # Edit global config
 crc config project edit   # Edit project config
+crc config upgrade        # Upgrade project config with new options
+crc config upgrade --global  # Upgrade global config with new options
 ```
+
+**Note:** After updating CRC with `crc update`, run `crc config upgrade` to get new configuration options and comments in your existing configs.
 
 ### Prompt Management
 
@@ -243,6 +249,11 @@ crc prompt reset             # Reset project prompt to default
   - Deletes all `.md` report files from the reports directory
   - Helps keep the reports directory from getting too large
   - Safe to run - only deletes report files
+
+- **`crc update`** - Update to the latest version
+  - Checks npm registry for the latest version
+  - Automatically updates the CLI if a new version is available
+  - Shows current and new version information
 
 - **`crc summarize`** - Generate codebase summary (coming soon)
   - Creates a summary of the entire codebase for context

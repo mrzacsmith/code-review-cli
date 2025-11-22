@@ -4,6 +4,7 @@ const { fastScanCommand } = require('./commands/fastScan');
 const { setupGlobalCommand } = require('./commands/setupGlobal');
 const { clearCommand } = require('./commands/clear');
 const { configCommand } = require('./commands/config');
+const { configUpgradeCommand } = require('./commands/configUpgrade');
 const { ignoreCommand } = require('./commands/ignore');
 const { doctorCommand } = require('./commands/doctor');
 const { showCommand } = require('./commands/show');
@@ -119,10 +120,16 @@ program
   .command('config')
   .description('Manage configuration (global or project)')
   .argument('[type]', 'config type: global or project')
-  .argument('[action]', 'action: show or edit (default: show)')
-  .action((type, action) => {
+  .argument('[action]', 'action: show, edit, or upgrade (default: show)')
+  .option('--global', 'Use global config for upgrade')
+  .action((type, action, options) => {
     if (type === 'help') {
       showEnhancedHelp('config').catch((err) => {
+        console.error('Error:', err.message);
+        process.exit(1);
+      });
+    } else if (type === 'upgrade' || action === 'upgrade') {
+      configUpgradeCommand(options).catch((err) => {
         console.error('Error:', err.message);
         process.exit(1);
       });
@@ -208,7 +215,7 @@ program
     // If a command was provided but not recognized, show error
     if (hasCommand && !options.clean && !options.deep && !options.fast && !options.commits && !options.n && !options.branch && !options.since) {
       const command = args.find((arg) => !arg.startsWith('--'));
-      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear', 'ignore', 'doctor', 'show', 'update'].includes(command)) {
+      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear', 'ignore', 'doctor', 'show', 'update', 'upgrade'].includes(command)) {
         console.error(`\n✗ Unknown command: ${command}`);
         console.error(`\nRun 'crc --help' to see available commands.\n`);
         process.exit(1);

@@ -49,6 +49,8 @@ async function updateCommand() {
       console.log(`  ${chalk.gray('Previous version:')} ${chalk.red(currentVersion)}`);
       console.log(`  ${chalk.gray('Current version:')}  ${chalk.green.bold(latestVersion)}`);
       console.log();
+      console.log(chalk.blue('💡 Tip: Run ') + chalk.cyan('crc config upgrade') + chalk.blue(' to get new config options!'));
+      console.log();
     } catch (err) {
       spinner.fail('Update failed');
       console.log();

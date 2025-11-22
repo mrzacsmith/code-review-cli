@@ -11,6 +11,10 @@ class OpenAIProvider extends BaseProvider {
     this.timeout = 60000; // 1 minute
     this.maxTokens = config.max_tokens || 3000;
     this.temperature = config.temperature !== undefined ? config.temperature : 0.7;
+
+    // GPT-5/o1/o3 reasoning models need much higher token limits
+    // They use tokens for internal reasoning, so need ~2-3x more than output tokens
+    this.reasoningModelMultiplier = 3;
   }
 
   /**
@@ -52,8 +56,14 @@ class OpenAIProvider extends BaseProvider {
       // GPT-5 and newer models (o1, o3) have special requirements:
       // - Use max_completion_tokens instead of max_tokens
       // - Do not support custom temperature (fixed at 1.0)
+      // - Need much higher token limits (use tokens for reasoning + output)
       const isNewModel = model.startsWith('gpt-5') || model.startsWith('o1') || model.startsWith('o3');
       const tokenParam = isNewModel ? 'max_completion_tokens' : 'max_tokens';
+
+      // Reasoning models need more tokens (they use tokens for thinking)
+      const tokenLimit = isNewModel
+        ? this.maxTokens * this.reasoningModelMultiplier
+        : this.maxTokens;
 
       const requestParams = {
         model,
@@ -63,7 +73,7 @@ class OpenAIProvider extends BaseProvider {
             content: truncatedPrompt,
           },
         ],
-        [tokenParam]: this.maxTokens,
+        [tokenParam]: tokenLimit,
       };
 
       // Only add temperature for models that support it (not GPT-5/o1/o3)
@@ -101,9 +111,25 @@ class OpenAIProvider extends BaseProvider {
                      '';
       }
 
-      // If still no content, something went wrong
+      // If still no content, log detailed debug info and throw error
       if (!reviewText) {
-        throw new Error('Empty response from model - no content returned');
+        const debugInfo = {
+          model,
+          hasChoices: !!response.choices,
+          choicesLength: response.choices?.length,
+          hasOutput: !!response.output,
+          choice0: response.choices?.[0] ? {
+            finishReason: response.choices[0].finish_reason,
+            hasMessage: !!response.choices[0].message,
+            messageKeys: response.choices[0].message ? Object.keys(response.choices[0].message) : null,
+            contentValue: response.choices[0].message?.content,
+            contentType: typeof response.choices[0].message?.content,
+            refusal: response.choices[0].message?.refusal,
+          } : null,
+          usage: response.usage,
+        };
+        console.error('[DEBUG] Empty response details:', JSON.stringify(debugInfo, null, 2));
+        throw new Error(`Empty response from model - no content returned. Check console for debug info.`);
       }
 
       return {

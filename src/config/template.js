@@ -23,7 +23,8 @@ const DEFAULT_CONFIG = `providers:
       - gpt-4o-mini
     # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
     # temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7, higher = more random)
-    # Note: GPT-5, o1, and o3 models do not support custom temperature (fixed at 1.0)
+    # Note: GPT-5, o1, o3 models don't support custom temperature (fixed at 1.0)
+    # Note: GPT-5, o1, o3 automatically get 3x max_tokens (for reasoning + output)
 
   anthropic:
     enabled: false

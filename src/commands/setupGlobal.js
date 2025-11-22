@@ -13,18 +13,26 @@ providers:
     api_key: YOUR_OPENROUTER_API_KEY_HERE
     models:
       - anthropic/claude-sonnet-4
+    # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
+    # temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7)
 
   openai:
     enabled: false
     api_key: YOUR_OPENAI_API_KEY_HERE
     models:
-      - gpt-4
+      - gpt-4o-mini
+    # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
+    # temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7)
+    # Note: GPT-5, o1, o3 models don't support custom temperature (fixed at 1.0)
+    # Note: GPT-5, o1, o3 automatically get 3x max_tokens (for reasoning + output)
 
   anthropic:
     enabled: false
     api_key: YOUR_ANTHROPIC_API_KEY_HERE
     models:
       - claude-sonnet-4-5
+    # max_tokens: 3000  # Optional: Maximum tokens for model response (default: 3000)
+    # temperature: 0.7  # Optional: Sampling temperature 0-2 (default: 0.7)
 
 # Note: Ollama doesn't need API keys (runs locally)
 # Project-specific configs can override these settings
