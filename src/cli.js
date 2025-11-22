@@ -7,6 +7,7 @@ const { configCommand } = require('./commands/config');
 const { ignoreCommand } = require('./commands/ignore');
 const { doctorCommand } = require('./commands/doctor');
 const { showCommand } = require('./commands/show');
+const { updateCommand } = require('./commands/update');
 const {
   showPromptCommand,
   editPromptCommand,
@@ -103,6 +104,16 @@ program
   .description('Remove all code review reports')
   .action(clearCommand);
 
+program
+  .command('update')
+  .description('Update to the latest version')
+  .action(() => {
+    updateCommand().catch((err) => {
+      console.error('Error:', err.message);
+      process.exit(1);
+    });
+  });
+
 // Config command
 program
   .command('config')
@@ -197,7 +208,7 @@ program
     // If a command was provided but not recognized, show error
     if (hasCommand && !options.clean && !options.deep && !options.fast && !options.commits && !options.n && !options.branch && !options.since) {
       const command = args.find((arg) => !arg.startsWith('--'));
-      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear', 'ignore', 'doctor', 'show'].includes(command)) {
+      if (command && !['init', 'setup-global', 'summarize', 'config', 'prompt', 'clear', 'ignore', 'doctor', 'show', 'update'].includes(command)) {
         console.error(`\n✗ Unknown command: ${command}`);
         console.error(`\nRun 'crc --help' to see available commands.\n`);
         process.exit(1);

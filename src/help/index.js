@@ -101,6 +101,7 @@ async function displayMainHelp() {
   console.log(`  ${chalk.green('crc prompt')}              Manage review prompts`);
   console.log(`  ${chalk.green('crc show <provider>')}     Show available models`);
   console.log(`  ${chalk.green('crc clear')}               Remove all reports`);
+  console.log(`  ${chalk.green('crc update')}              Update to latest version`);
   console.log();
   
   // Live Status Section
