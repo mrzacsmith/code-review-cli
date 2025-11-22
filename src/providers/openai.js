@@ -76,7 +76,35 @@ class OpenAIProvider extends BaseProvider {
       });
 
       const processingTime = Date.now() - startTime;
-      const reviewText = response.choices[0]?.message?.content || '';
+
+      // Extract review text - handle GPT-5 refusal field
+      let reviewText = '';
+
+      if (response.choices && response.choices[0]) {
+        const choice = response.choices[0];
+
+        // Check for GPT-5 refusal first
+        if (choice.message?.refusal) {
+          throw new Error(`Model refused to respond: ${choice.message.refusal}`);
+        }
+
+        // Try multiple possible content locations
+        reviewText = choice.message?.content ||
+                     choice.message?.text ||
+                     choice.text ||
+                     choice.content ||
+                     '';
+      } else if (response.output) {
+        // GPT-5 Responses API format
+        reviewText = response.output[0]?.content ||
+                     response.output[0]?.text ||
+                     '';
+      }
+
+      // If still no content, something went wrong
+      if (!reviewText) {
+        throw new Error('Empty response from model - no content returned');
+      }
 
       return {
         model,
