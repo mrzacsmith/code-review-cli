@@ -40,9 +40,10 @@ function generateReportFilename(commit, scanType = 'fast') {
   const now = new Date();
   const dateStr = formatDateForFilename(now);
   const shortHash = commit.shortHash || commit.hash.substring(0, 7);
-  // Sanitize scanType to remove invalid filename characters
+  // Sanitize both shortHash and scanType to remove invalid filename characters
+  const sanitizedShortHash = shortHash.replace(/[/\\:*?"<>|]/g, '_');
   const sanitizedScanType = scanType.replace(/[/\\:*?"<>|]/g, '_');
-  return `${dateStr}_${shortHash}_${sanitizedScanType}.md`;
+  return `${dateStr}_${sanitizedShortHash}_${sanitizedScanType}.md`;
 }
 
 /**
